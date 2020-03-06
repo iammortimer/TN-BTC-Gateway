@@ -1,4 +1,4 @@
-from web3 import Web3
+import bitcoinrpc.authproxy as authproxy
 import sqlite3 as sqlite
 import requests
 
@@ -23,7 +23,7 @@ def createdb():
             sourceAddress text NOT NULL,
             targetAddress text NOT NULL,
             tnTxId text NOT NULL,
-            ethTxId text NOT NULL,
+            otherTxId text NOT NULL,
             timestamp timestamp
             default current_timestamp,
             amount real,
@@ -36,7 +36,7 @@ def createdb():
             sourceAddress text ,
             targetAddress text ,
             tnTxId text ,
-            ethTxId text ,
+            otherTxId text ,
             timestamp timestamp
             default current_timestamp,
             amount real,
@@ -59,16 +59,17 @@ def initialisedb(config):
     tnlatestBlock = requests.get(config['tn']['node'] + '/blocks/height').json()['height'] - 1
 
     #get current ETH block:
-    if config['erc20']['node'].startswith('http'):
-        w3 = Web3(Web3.HTTPProvider(config['erc20']['node']))
+    if config['other']['node'].startswith('http'):
+        instance = authproxy.AuthServiceProxy(config['other']['node'])
     else:
-        w3 = Web3()
+        instance = authproxy.AuthServiceProxy()
 
-    ethlatestBlock = w3.eth.blockNumber
+    latestBlock = instance.getblock(instance.getbestblockhash())
+    otherlatestBlock = latestBlock['height']
 
     con = sqlite.connect('gateway.db')
     cursor = con.cursor()
-    cursor.execute('INSERT INTO heights ("chain", "height") VALUES ("ETH", ' + str(ethlatestBlock) + ')')
+    cursor.execute('INSERT INTO heights ("chain", "height") VALUES ("Other", ' + str(otherlatestBlock) + ')')
     cursor.execute('INSERT INTO heights ("chain", "height") VALUES ("TN", ' + str(tnlatestBlock) + ')')
     con.commit()
     con.close()

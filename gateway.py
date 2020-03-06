@@ -1,6 +1,6 @@
 import re
 import sqlite3 as sqlite
-from web3 import Web3
+import bitcoinrpc.authproxy as authproxy
 import json
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -16,10 +16,10 @@ security = HTTPBasic()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-with open('config.json') as json_file:
+with open('config_run.json') as json_file:
     config = json.load(json_file)
 
-w3 = Web3(Web3.HTTPProvider(config['erc20']['node']))
+instance = authproxy.AuthServiceProxy(config['other']['node'])
 
 def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
     correct_username = secrets.compare_digest(credentials.username, config["main"]["admin-username"])
@@ -42,24 +42,24 @@ async def index(request: Request):
                                                      "tn_gateway_fee":config['tn']['gateway_fee'],
                                                      "tn_network_fee":config['tn']['network_fee'],
                                                      "tn_total_fee":config['tn']['network_fee']+config['tn']['gateway_fee'],
-                                                     "eth_gateway_fee":config['erc20']['gateway_fee'],
-                                                     "eth_network_fee":config['erc20']['network_fee'],
-                                                     "eth_total_fee":config['erc20']['network_fee'] + config['erc20']['gateway_fee'],
+                                                     "eth_gateway_fee":config['other']['gateway_fee'],
+                                                     "eth_network_fee":config['other']['network_fee'],
+                                                     "eth_total_fee":config['other']['network_fee'] + config['other']['gateway_fee'],
                                                      "fee": config['tn']['fee'],
                                                      "company": config['main']['company'],
                                                      "email": config['main']['contact-email'],
                                                      "telegram": config['main']['contact-telegram'],
                                                      "recovery_amount":config['main']['recovery_amount'],
                                                      "recovery_fee":config['main']['recovery_fee'],
-                                                     "ethHeight": heights['ETH'],
+                                                     "ethHeight": heights['Other'],
                                                      "tnHeight": heights['TN'],
                                                      "tnAddress": config['tn']['gatewayAddress'],
-                                                     "ethAddress": config['erc20']['gatewayAddress']})
+                                                     "ethAddress": config['other']['gatewayAddress']})
 
 @app.get('/heights')
 async def getHeights():
     dbCon = sqlite.connect('gateway.db')
-    result = dbCon.cursor().execute('SELECT chain, height FROM heights WHERE chain = "ETH" or chain = "TN"').fetchall()
+    result = dbCon.cursor().execute('SELECT chain, height FROM heights WHERE chain = "Other" or chain = "TN"').fetchall()
     return { result[0][0]: result[0][1], result[1][0]: result[1][1] }
 
 @app.get('/errors')
@@ -105,12 +105,8 @@ async def createTunnel(sourceAddress, targetAddress):
 
     result = dbCon.cursor().execute('SELECT targetAddress FROM tunnel WHERE sourceAddress = ?', (sourceAddress,)).fetchall()
     if len(result) == 0:
-        try:
-            sourceAddress = w3.toChecksumAddress(sourceAddress)
-        except:
-            return { 'successful': False }
-
-        if w3.isAddress(sourceAddress):
+        valAddress = instance.validateaddress(sourceAddress)
+        if valAddress['isvalid']:
             dbCon.cursor().execute('INSERT INTO TUNNEL ("sourceAddress", "targetAddress") VALUES (?, ?)', values)
             dbCon.commit()
 

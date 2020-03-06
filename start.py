@@ -5,16 +5,16 @@ import uvicorn
 
 import setupDB
 from tnChecker import TNChecker
-from ethChecker import ETHChecker
+from otherChecker import OtherChecker
 
-with open('config.json') as json_file:
+with open('config_run.json') as json_file:
     config = json.load(json_file)
 
 def main():
     #check db
     try:
         dbCon = sqlite.connect('gateway.db')
-        result = dbCon.cursor().execute('SELECT chain, height FROM heights WHERE chain = "TN" or chain = "ETH"').fetchall()
+        result = dbCon.cursor().execute('SELECT chain, height FROM heights WHERE chain = "TN" or chain = "Other"').fetchall()
         #dbcon.close()
         if len(result) == 0:
             setupDB.initialisedb(config)
@@ -24,10 +24,10 @@ def main():
         
     #load and start threads
     tn = TNChecker(config)
-    eth = ETHChecker(config)
-    ethThread = threading.Thread(target=eth.run)
+    other = OtherChecker(config)
+    otherThread = threading.Thread(target=other.run)
     tnThread = threading.Thread(target=tn.run)
-    ethThread.start()
+    otherThread.start()
     tnThread.start()
     
     #start app

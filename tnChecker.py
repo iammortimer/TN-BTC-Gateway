@@ -6,7 +6,7 @@ import base58
 import PyCWaves
 import traceback
 import sharedfunc
-from web3 import Web3
+import bitcoinrpc.authproxy as authproxy
 
 class TNChecker(object):
     def __init__(self, config):
@@ -14,8 +14,7 @@ class TNChecker(object):
         self.dbCon = sqlite.connect('gateway.db')
 
         self.node = self.config['tn']['node']
-        self.w3 = Web3(Web3.HTTPProvider(self.config['erc20']['node']))
-        self.privatekey = os.getenv(self.config['erc20']['seedenvname'], self.config['erc20']['privateKey'])
+        self.otherProxy = authproxy.AuthServiceProxy(self.config['other']['node'])
 
         cursor = self.dbCon.cursor()
         self.lastScannedBlock = cursor.execute('SELECT height FROM heights WHERE chain = "TN"').fetchall()[0][0]
@@ -57,39 +56,29 @@ class TNChecker(object):
         for transaction in block['transactions']:
             if self.checkTx(transaction):
                 targetAddress = base58.b58decode(transaction['attachment']).decode()
-                targetAddress = self.w3.toChecksumAddress(targetAddress)
+                valAddress = self.otherProxy.validateaddress(targetAddress)
 
-                if not(self.w3.isAddress(targetAddress)):
+                if not(valAddress['isvalid']):
                     self.faultHandler(transaction, "txerror")
                 else:
                     amount = transaction['amount'] / pow(10, self.config['tn']['decimals'])
-                    amount -= self.config['erc20']['fee']
-                    amount *= pow(10, self.config['erc20']['decimals'])
+                    amount -= self.config['other']['fee']
+                    amount *= pow(10, self.config['other']['decimals'])
                     amount = int(round(amount))
 
                     try:
-                        nonce = self.w3.eth.getTransactionCount(self.config['erc20']['gatewayAddress'])
-                        tx = {
-                            'to': targetAddress,
-                            'value': amount,
-                            'gas': self.config['erc20']['gas'],
-                            'gasPrice': self.w3.toWei(self.config['erc20']['gasprice'], 'gwei'),
-                            'nonce': nonce,
-                            'chainId': self.config['erc20']['chainid']
-                        }
-                        signed_tx = self.w3.eth.account.signTransaction(tx, private_key=self.privatekey)
-                        txId = self.w3.eth.sendRawTransaction(signed_tx.rawTransaction)
+                        txId = self.otherProxy.sendtoaddress(targetAddress, amount)
 
-                        if not(str(txId.hex()).startswith('0x')):
-                            self.faultHandler(transaction, "senderror", e=txId.hex())
-                        else:
-                            print("send tx: " + str(txId.hex()))
+                        #if not(str(txId.hex()).startswith('0x')):
+                        #    self.faultHandler(transaction, "senderror", e=txId.hex())
+                        #else:
+                        print("send tx: " + txId)
 
-                            cursor = self.dbCon.cursor()
-                            amount /= pow(10, self.config['erc20']['decimals'])
-                            cursor.execute('INSERT INTO executed ("sourceAddress", "targetAddress", "tnTxId", "ethTxId", "amount", "amountFee") VALUES ("' + transaction['sender'] + '", "' + targetAddress + '", "' + transaction['id'] + '", "' + txId.hex() + '", "' + str(round(amount)) + '", "' + str(self.config['erc20']['fee']) + '")')
-                            self.dbCon.commit()
-                            print('send tokens from tn to other network!')
+                        cursor = self.dbCon.cursor()
+                        amount /= pow(10, self.config['erc20']['decimals'])
+                        cursor.execute('INSERT INTO executed ("sourceAddress", "targetAddress", "tnTxId", "otherTxId", "amount", "amountFee") VALUES ("' + transaction['sender'] + '", "' + targetAddress + '", "' + transaction['id'] + '", "' + txId + '", "' + str(round(amount)) + '", "' + str(self.config['other']['fee']) + '")')
+                        self.dbCon.commit()
+                        print('send tokens from tn to other network!')
                     except Exception as e:
                         self.faultHandler(transaction, "txerror", e=e)
 
@@ -116,20 +105,20 @@ class TNChecker(object):
 
         if error == "noattachment":
             cursor = self.dbCon.cursor()
-            cursor.execute('INSERT INTO errors ("sourceAddress", "targetAddress", "ethTxId", "tnTxId", "amount", "error") VALUES ("' + tx['sender'] + '", "", "", "' + tx['id'] + '", "' + str(amount) + '", "no attachment found on transaction")')
+            cursor.execute('INSERT INTO errors ("sourceAddress", "targetAddress", "otherTxId", "tnTxId", "amount", "error") VALUES ("' + tx['sender'] + '", "", "", "' + tx['id'] + '", "' + str(amount) + '", "no attachment found on transaction")')
             self.dbCon.commit()
             print(timestampStr + " - Error: no attachment found on transaction from " + tx['sender'] + " - check errors table.")
 
         if error == "txerror":
             targetAddress = base58.b58decode(tx['attachment']).decode()
             cursor = self.dbCon.cursor()
-            cursor.execute('INSERT INTO errors ("sourceAddress", "targetAddress", "ethTxId", "tnTxId", "amount", "error", "exception") VALUES ("' + tx['sender'] + '", "' + targetAddress + '", "", "' + tx['id'] + '", "' + str(amount) + '", "tx error, possible incorrect address", "' + str(e) + '")')
+            cursor.execute('INSERT INTO errors ("sourceAddress", "targetAddress", "otherTxId", "tnTxId", "amount", "error", "exception") VALUES ("' + tx['sender'] + '", "' + targetAddress + '", "", "' + tx['id'] + '", "' + str(amount) + '", "tx error, possible incorrect address", "' + str(e) + '")')
             self.dbCon.commit()
             print(timestampStr + " - Error: on outgoing transaction for transaction from " + tx['sender'] + " - check errors table.")
 
         if error == "senderror":
             targetAddress = base58.b58decode(tx['attachment']).decode()
             cursor = self.dbCon.cursor()
-            cursor.execute('INSERT INTO errors ("sourceAddress", "targetAddress", "ethTxId", "tnTxId", "amount", "error", "exception") VALUES ("' + tx['sender'] + '", "' + targetAddress + '", "", "' + tx['id'] + '", "' + str(amount) + '", "tx error, check exception error", "' + str(e) + '")')
+            cursor.execute('INSERT INTO errors ("sourceAddress", "targetAddress", "otherTxId", "tnTxId", "amount", "error", "exception") VALUES ("' + tx['sender'] + '", "' + targetAddress + '", "", "' + tx['id'] + '", "' + str(amount) + '", "tx error, check exception error", "' + str(e) + '")')
             self.dbCon.commit()
             print(timestampStr + " - Error: on outgoing transaction for transaction from " + tx['sender'] + " - check errors table.")

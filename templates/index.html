@@ -18,7 +18,7 @@
     <header class="deskHeader">
       <div class="logos">
         <div class="logobg">
-          <img class="logo" src="/static/etho.png" alt={{chainName}} + " Logo">
+          <img class="logo" src="/static/btc.png" alt={{chainName}} + " Logo">
         </div>
         <div class="title">
           <h1>
@@ -38,7 +38,7 @@
       </div>
       <div class="logos">
         <div class="logobg">
-          <img class="logo" src="/static/etho.png" alt={{chainName}} + " Logo">
+          <img class="logo" src="/static/btc.png" alt={{chainName}} + " Logo">
         </div>
         <div class="logobg">
           <img class="logo" src="/static/tn.png" alt="TN Logo">
@@ -50,25 +50,25 @@
         <p>🛈</p>
       </div>
       <div class="info">
-        <h2>This is a gateway for exchanging {{chainName}} tokens between the Ethereum and Turtle Network Platform.</h2>
+        <h2>This is a gateway for exchanging {{chainName}} tokens between the Bitcoin and Turtle Network Platform.</h2>
         <h3>
-					<strong>To Send {{chainName}} to Ethereum Network,</strong> using Turtle Network wallet
+					<strong>To Send {{chainName}} to Bitcoin Network,</strong> using Turtle Network wallet
         </h3>
         <p>
           - Click "SEND"</br>
           - Recipient's Address = {{ tnAddress }}</br>
-          - Attachment = only insert your ETH wallet address</br>
+          - Attachment = only insert your BTC wallet address</br>
         </p>
         <h3>
-					<strong>To Send {{chainName}} to Turtle Network,</strong> using Ethereum wallet
+					<strong>To Send {{chainName}} to Turtle Network,</strong> using Bitcoin wallet
         </h3>
         <p>
-          - Fill in your source ETH wallet address and the receiving Turtle Network wallet address below</br>
+          - Fill in your source BTC wallet address and the receiving Turtle Network wallet address below</br>
           - Click "Establish Tunnel"</br>
-          - From your ETH wallet send the {{chainName}} tokens to the gateway wallet</br>
+          - From your BTC wallet send the {{chainName}} tokens to the gateway wallet</br>
           - Recipient's Address = {{ ethAddress }}</br>
           - Tunnels are one time use, they are deleted after a succesfull transfer</br>
-          - If you want to verify a tunnel fill in your ETH wallet address and click "Check ETH Tunnel"</br>
+          - If you want to verify a tunnel fill in your BTC wallet address and click "Check BTC Tunnel"</br>
         </p>
       </div>
     </div>
@@ -81,7 +81,7 @@
             <tr>
                 <td>
                   <label for="ethAddress">
-                    ETH Address
+                    BTC Address
                   </label>
                 </td>
                 <td>
@@ -104,7 +104,7 @@
             Establish Tunnel
           </button>
           <button onclick="checkETHAddress(event)" class="check">
-            Check ETH Tunnel
+            Check BTC Tunnel
           </button>
         </div>
       </form>
@@ -118,7 +118,7 @@
           Turtle Network height: <strong>{{ tnHeight }}</strong>, Turtle Network Gateway Address: <strong>{{ tnAddress }}</strong>
         </p>
         <p class="address">
-          ETH Network height: <strong>{{ ethHeight }}</strong>, Ethereum Network Gateway Address: <strong>{{ ethAddress }}</strong>
+          BTC Network height: <strong>{{ ethHeight }}</strong>, Bitcoin Network Gateway Address: <strong>{{ ethAddress }}</strong>
         </p>
         <p class="address">
           {{chainName}} Official ASSET ID: <strong>{{ assetID }}</strong>
@@ -171,7 +171,10 @@
         <p class="mail">
           This gateway is run by {{ company }} - contact us at <a href="mailto:{{ email }}">{{ email }}</a> or Telegram at <a href="{{ telegram }}">{{ telegram }}</a>
         </p>
-      </div>
+        <p class="mail">
+          By using this service you accept following <a href="https://docs.turtlenetwork.eu/files/placeholder.pdf">agreement</a>
+        </p>
+     </div>
     </div>
     <a class="freepik" href="https://www.freepik.com/free-photos-vectors/background">Background vector created by pikisuperstar - www.freepik.com</a>
   </div>
