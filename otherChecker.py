@@ -14,8 +14,9 @@ class OtherChecker(object):
 
         self.pwTN = PyCWaves.PyCWaves()
         self.pwTN.setNode(node=self.config['tn']['node'], chain=self.config['tn']['network'], chain_id='L')
+        self.pwTN.THROW_EXCEPTION_ON_ERROR = True
         seed = os.getenv(self.config['tn']['seedenvname'], self.config['tn']['gatewaySeed'])
-        #self.tnAddress = self.pwTN.Address(seed=seed)
+        self.tnAddress = self.pwTN.Address(seed=seed)
         self.tnAsset = self.pwTN.Asset(self.config['tn']['assetId'])
 
         cursor = self.dbCon.cursor()
@@ -96,9 +97,9 @@ class OtherChecker(object):
 
                             cursor = self.dbCon.cursor()
                             amount /= pow(10, self.config['tn']['decimals'])
-                            cursor.execute('INSERT INTO executed ("sourceAddress", "targetAddress", "ethTxId", "tnTxId", "amount", "amountFee") VALUES ("' + txInfo['sender'] + '", "' + targetAddress + '", "' + transaction.hex() + '", "' + tx['id'] + '", "' + str(round(amount)) + '", "' + str(self.config['tn']['fee']) + '")')
+                            cursor.execute('INSERT INTO executed ("sourceAddress", "targetAddress", "otherTxId", "tnTxId", "amount", "amountFee") VALUES ("' + txInfo['sender'] + '", "' + targetAddress + '", "' + txInfo['id'] + '", "' + tx['id'] + '", "' + str(round(amount)) + '", "' + str(self.config['tn']['fee']) + '")')
                             self.dbCon.commit()
-                            print('send tokens from waves to tn!')
+                            print('send tokens from other to tn!')
 
                             cursor = self.dbCon.cursor()
                             cursor.execute('DELETE FROM tunnel WHERE sourceAddress = "' + txInfo['sender'] + '" and targetAddress = "' + targetAddress + '"')
@@ -120,7 +121,7 @@ class OtherChecker(object):
                     sender = senders[0]
                 
                     recipient = receiver['address']
-                    amount = receiver['amount'] / 10 ** self.config['other']['decimals']
+                    amount = receiver['amount'] #/ 10 ** self.config['other']['decimals']
 
                     cursor = self.dbCon.cursor()
                     res = cursor.execute('SELECT tnTxId FROM executed WHERE otherTxId = "' + transaction['txid'] + '"').fetchall()

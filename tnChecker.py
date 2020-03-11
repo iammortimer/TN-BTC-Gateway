@@ -63,8 +63,8 @@ class TNChecker(object):
                 else:
                     amount = transaction['amount'] / pow(10, self.config['tn']['decimals'])
                     amount -= self.config['other']['fee']
-                    amount *= pow(10, self.config['other']['decimals'])
-                    amount = int(round(amount))
+                    #amount *= pow(10, self.config['other']['decimals'])
+                    #amount = int(round(amount))
 
                     try:
                         txId = self.otherProxy.sendtoaddress(targetAddress, amount)
@@ -90,7 +90,7 @@ class TNChecker(object):
             if len(targetAddress) > 1:
                 #check if we already processed this tx
                 cursor = self.dbCon.cursor()
-                result = cursor.execute('SELECT ethTxId FROM executed WHERE tnTxId = "' + tx['id'] + '"').fetchall()
+                result = cursor.execute('SELECT otherTxId FROM executed WHERE tnTxId = "' + tx['id'] + '"').fetchall()
 
                 if len(result) == 0: return True
             else:
