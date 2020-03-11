@@ -99,7 +99,7 @@ class OtherChecker(object):
                             amount /= pow(10, self.config['tn']['decimals'])
                             cursor.execute('INSERT INTO executed ("sourceAddress", "targetAddress", "otherTxId", "tnTxId", "amount", "amountFee") VALUES ("' + txInfo['sender'] + '", "' + targetAddress + '", "' + txInfo['id'] + '", "' + tx['id'] + '", "' + str(round(amount)) + '", "' + str(self.config['tn']['fee']) + '")')
                             self.dbCon.commit()
-                            print('send tokens from other to tn!')
+                            print(self.config['main']['name'] & ' tokens deposited on tn!')
 
                             cursor = self.dbCon.cursor()
                             cursor.execute('DELETE FROM tunnel WHERE sourceAddress = "' + txInfo['sender'] + '" and targetAddress = "' + targetAddress + '"')

@@ -3,3 +3,5 @@ fastapi
 uvicorn
 jinja2
 aiofiles
+base58==0.2.5
+python-bitcoinrpc

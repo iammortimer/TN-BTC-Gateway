@@ -11,8 +11,7 @@
         "admin-password": "admin"
     },
     "other": {
-        "node": "<the btc node your wallet is running on>",
-        "chainid": <chainid of the ETH chain this is>,
+        "node": "<the btc node your wallet is running on including rpcusername & rpcpassword>",
         "decimals": <number of decimals of the token>,
         "gatewayAddress": "<Waves address of the gateway>",
         "fee": <the total fee you want to collect on the gateway, calculated in the proxy token, e.g., 0.1>,

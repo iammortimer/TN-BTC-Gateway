@@ -1,9 +1,9 @@
-# TN <-> ETH Platform Gateway Framework
+# TN <-> BTC Platform Gateway Framework
 
 Inspired by Hawky's Waves-ERC20 Gateway: https://github.com/PyWaves/Waves-ERC20-Gateway
 But rewritten to be published under FOSS license.
 
-This framework allows to easily establish a gateway between any ETH chain and the
+This framework allows to easily establish a gateway between any BTC chain and the
 TN Platform.
 ## Installation
 Clone this repository and edit the config.json file according to your needs. Install the following dependencies:
@@ -12,6 +12,8 @@ pycwaves
 fastapi[all]
 jinja2
 aiofiles
+base58==0.2.5
+python-bitcoinrpc
 ```
 via pip and run the gateway by
 ```
@@ -32,18 +34,13 @@ The config.json file includes all necessary settings that need to be connfigured
         "admin-username": "admin",
         "admin-password": "admin"
     },
-    "erc20": {
-        "node": "<the eth node you want to connect to>",
-        "chainid": <chainid of the ETH chain this is>,
-        "gatewayAddress": "<Waves address of the gateway>",
+    "other": {
+        "node": "<the btc node your wallet is running on including rpcusername & rpcpassword>",
         "decimals": <number of decimals of the token>,
-        "privateKey": "<privatekey of the above devined address>",
-        "seedenvname" : "<the ENV name to store your private key instead of the field above>",
+        "gatewayAddress": "<Waves address of the gateway>",
         "fee": <the total fee you want to collect on the gateway, calculated in the proxy token, e.g., 0.1>,
         "gateway_fee": <the gatewway part of the fee calculated in the proxy token, e.g., 0.1>,
         "network_fee": <the tx part of the fee calculated in the proxy token, e.g., 0.1>,
-        "gas": <the amount of gas used for each transaction on the ETH network>,
-        "gasprice" : <the gasprice in gwei>,
         "timeInBetweenChecks": <seconds in between a check for a new block>,
         "confirmations": <number of confirmations necessary in order to accept a transaction>
     },
@@ -68,9 +65,9 @@ The config.json file includes all necessary settings that need to be connfigured
 After starting the gateway, it will provide a webpage on the port set in config.json.
 
 ## Usage of the gateway
-This is a simple gateway for TN tokens to the ETH Platform and vice versa. For sending tokens from the Etherium Platform to the TN blockchain, fill in your source ETH wallet address and the receiving Turtle Network wallet to create a tunnel. Then send the tokens to the Ethereum address of the gateway.
+This is a simple gateway for TN tokens to the BTC Platform and vice versa. For sending tokens from the BTC Platform to the TN blockchain, fill in your source BTC wallet address and the receiving Turtle Network wallet to create a tunnel. Then send the tokens to the Ethereum address of the gateway.
 
-For sending tokens from the TN Platform to the Etherium blockchain, just add the Etherium address that should receive the tokens as the description of the transfer and send the tokens to the TN address of the gateway.
+For sending tokens from the TN Platform to the BTC blockchain, just add the BTC address that should receive the tokens as the description of the transfer and send the tokens to the TN address of the gateway.
 
 ## Management interface
 After starting the gateway, there are also a couple of management interfaces which are secured by the admin-username and admin-password fields in the config.json:
