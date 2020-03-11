@@ -19,8 +19,6 @@ templates = Jinja2Templates(directory="templates")
 with open('config.json') as json_file:
     config = json.load(json_file)
 
-instance = authproxy.AuthServiceProxy(config['other']['node'])
-
 def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
     correct_username = secrets.compare_digest(credentials.username, config["main"]["admin-username"])
     correct_password = secrets.compare_digest(credentials.password, config["main"]["admin-password"])
@@ -105,6 +103,7 @@ async def createTunnel(sourceAddress, targetAddress):
 
     result = dbCon.cursor().execute('SELECT targetAddress FROM tunnel WHERE sourceAddress = ?', (sourceAddress,)).fetchall()
     if len(result) == 0:
+        instance = authproxy.AuthServiceProxy(config['other']['node'])
         valAddress = instance.validateaddress(sourceAddress)
         if valAddress['isvalid']:
             dbCon.cursor().execute('INSERT INTO TUNNEL ("sourceAddress", "targetAddress") VALUES (?, ?)', values)

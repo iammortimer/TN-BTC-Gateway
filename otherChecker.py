@@ -10,7 +10,7 @@ class OtherChecker(object):
     def __init__(self, config):
         self.config = config
         self.dbCon = sqlite.connect('gateway.db')
-        self.myProxy = self.getProxy()
+        self.myProxy = authproxy.AuthServiceProxy(self.config['other']['node'])
 
         self.pwTN = PyCWaves.PyCWaves()
         self.pwTN.setNode(node=self.config['tn']['node'], chain=self.config['tn']['network'], chain_id='L')
@@ -21,16 +21,6 @@ class OtherChecker(object):
 
         cursor = self.dbCon.cursor()
         self.lastScannedBlock = cursor.execute('SELECT height FROM heights WHERE chain = "Other"').fetchall()[0][0]
-
-    def getProxy(self):
-        instance = None
-
-        if self.config['other']['node'].startswith('http'):
-            instance = authproxy.AuthServiceProxy(self.config['other']['node'])
-        else:
-            instance = authproxy.AuthServiceProxy()
-
-        return instance
 
     def getCurrentBlock(self):
         latestBlock = self.myProxy.getblock(self.myProxy.getbestblockhash())
@@ -121,7 +111,7 @@ class OtherChecker(object):
                     sender = senders[0]
                 
                     recipient = receiver['address']
-                    amount = receiver['amount'] #/ 10 ** self.config['other']['decimals']
+                    amount = receiver['amount']
 
                     cursor = self.dbCon.cursor()
                     res = cursor.execute('SELECT tnTxId FROM executed WHERE otherTxId = "' + transaction['txid'] + '"').fetchall()

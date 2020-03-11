@@ -14,7 +14,6 @@ class TNChecker(object):
         self.dbCon = sqlite.connect('gateway.db')
 
         self.node = self.config['tn']['node']
-        self.otherProxy = authproxy.AuthServiceProxy(self.config['other']['node'])
 
         cursor = self.dbCon.cursor()
         self.lastScannedBlock = cursor.execute('SELECT height FROM heights WHERE chain = "TN"').fetchall()[0][0]
@@ -56,29 +55,28 @@ class TNChecker(object):
         for transaction in block['transactions']:
             if self.checkTx(transaction):
                 targetAddress = base58.b58decode(transaction['attachment']).decode()
-                valAddress = self.otherProxy.validateaddress(targetAddress)
+                otherProxy = authproxy.AuthServiceProxy(self.config['other']['node'])
+                valAddress = otherProxy.validateaddress(targetAddress)
 
                 if not(valAddress['isvalid']):
                     self.faultHandler(transaction, "txerror")
                 else:
                     amount = transaction['amount'] / pow(10, self.config['tn']['decimals'])
                     amount -= self.config['other']['fee']
-                    #amount *= pow(10, self.config['other']['decimals'])
-                    #amount = int(round(amount))
 
                     try:
-                        txId = self.otherProxy.sendtoaddress(targetAddress, amount)
+                        txId = otherProxy.sendtoaddress(targetAddress, amount)
 
-                        #if not(str(txId.hex()).startswith('0x')):
-                        #    self.faultHandler(transaction, "senderror", e=txId.hex())
-                        #else:
-                        print("send tx: " + txId)
+                        if 'error' in txId:
+                            self.faultHandler(transaction, "senderror", e=txId)
+                        else:
+                            print("send tx: " + txId)
 
-                        cursor = self.dbCon.cursor()
-                        amount /= pow(10, self.config['erc20']['decimals'])
-                        cursor.execute('INSERT INTO executed ("sourceAddress", "targetAddress", "tnTxId", "otherTxId", "amount", "amountFee") VALUES ("' + transaction['sender'] + '", "' + targetAddress + '", "' + transaction['id'] + '", "' + txId + '", "' + str(round(amount)) + '", "' + str(self.config['other']['fee']) + '")')
-                        self.dbCon.commit()
-                        print(self.config['main']['name'] & ' tokens withdrawn from tn!')
+                            cursor = self.dbCon.cursor()
+                            amount /= pow(10, self.config['erc20']['decimals'])
+                            cursor.execute('INSERT INTO executed ("sourceAddress", "targetAddress", "tnTxId", "otherTxId", "amount", "amountFee") VALUES ("' + transaction['sender'] + '", "' + targetAddress + '", "' + transaction['id'] + '", "' + txId + '", "' + str(round(amount)) + '", "' + str(self.config['other']['fee']) + '")')
+                            self.dbCon.commit()
+                            print(self.config['main']['name'] & ' tokens withdrawn from tn!')
                     except Exception as e:
                         self.faultHandler(transaction, "txerror", e=e)
 
