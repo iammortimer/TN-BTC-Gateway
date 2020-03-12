@@ -16,7 +16,7 @@ class OtherChecker(object):
         self.pwTN.setNode(node=self.config['tn']['node'], chain=self.config['tn']['network'], chain_id='L')
         self.pwTN.THROW_EXCEPTION_ON_ERROR = True
         seed = os.getenv(self.config['tn']['seedenvname'], self.config['tn']['gatewaySeed'])
-        #self.tnAddress = self.pwTN.Address(seed=seed)
+        self.tnAddress = self.pwTN.Address(seed=seed)
         self.tnAsset = self.pwTN.Asset(self.config['tn']['assetId'])
 
         cursor = self.dbCon.cursor()
