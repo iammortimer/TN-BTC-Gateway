@@ -12,6 +12,7 @@
     },
     "other": {
         "node": "<the btc node your wallet is running on including rpcusername & rpcpassword>",
+        "passphrase": "if the node wallet is encrypted enter the passphrase here, otherwise leave empty",
         "decimals": <number of decimals of the token>,
         "gatewayAddress": "<Waves address of the gateway>",
         "fee": <the total fee you want to collect on the gateway, calculated in the proxy token, e.g., 0.1>,
