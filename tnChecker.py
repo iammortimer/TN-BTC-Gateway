@@ -65,12 +65,14 @@ class TNChecker(object):
                     amount -= self.config['other']['fee']
 
                     try:
-                        if len(self.config['other']['passphrase']) > 0:
-                            otherProxy.walletpassphrase(self.config['other']['passphrase'], 30)
+                        passphrase = os.getenv(self.config['other']['passenvname'], self.config['other']['passphrase'])
+
+                        if len(passphrase) > 0:
+                            otherProxy.walletpassphrase(passphrase, 30)
 
                         txId = otherProxy.sendtoaddress(targetAddress, amount)
 
-                        if len(self.config['other']['passphrase']) > 0:
+                        if len(passphrase) > 0:
                             otherProxy.walletlock()
 
                         if 'error' in txId:
