@@ -7,6 +7,7 @@ import PyCWaves
 import traceback
 import sharedfunc
 import bitcoinrpc.authproxy as authproxy
+from verification import verifier
 
 class TNChecker(object):
     def __init__(self, config):
@@ -14,6 +15,7 @@ class TNChecker(object):
         self.dbCon = sqlite.connect('gateway.db')
 
         self.node = self.config['tn']['node']
+        self.verifier = verifier(config)
 
         cursor = self.dbCon.cursor()
         self.lastScannedBlock = cursor.execute('SELECT height FROM heights WHERE chain = "TN"').fetchall()[0][0]
@@ -81,12 +83,14 @@ class TNChecker(object):
                             print("send tx: " + txId)
 
                             cursor = self.dbCon.cursor()
-                            amount /= pow(10, self.config['erc20']['decimals'])
+                            #amount /= pow(10, self.config['other']['decimals'])
                             cursor.execute('INSERT INTO executed ("sourceAddress", "targetAddress", "tnTxId", "otherTxId", "amount", "amountFee") VALUES ("' + transaction['sender'] + '", "' + targetAddress + '", "' + transaction['id'] + '", "' + txId + '", "' + str(round(amount)) + '", "' + str(self.config['other']['fee']) + '")')
                             self.dbCon.commit()
                             print(self.config['main']['name'] & ' tokens withdrawn from tn!')
                     except Exception as e:
                         self.faultHandler(transaction, "txerror", e=e)
+
+                    self.verifier.verifyOther(txId)
 
     def checkTx(self, tx):
         #check the transaction

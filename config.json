@@ -9,7 +9,9 @@
         "recovery_fee": <recovery fee in %>,
         "admin-username": "admin",
         "admin-password": "admin",
-        "disclaimer": "link to a disclaimer file online"
+        "disclaimer": "link to a disclaimer file online",
+        "min": <minimum amount>,
+        "max": <maximum amount>
     },
     "other": {
         "node": "<the btc node your wallet is running on including rpcusername & rpcpassword>",

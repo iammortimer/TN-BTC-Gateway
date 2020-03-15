@@ -32,7 +32,10 @@ The config.json file includes all necessary settings that need to be connfigured
         "recovery_amount": <minimum recovery amount>,
         "recovery_fee": <recovery fee in %>,
         "admin-username": "admin",
-        "admin-password": "admin"
+        "admin-password": "admin",
+        "disclaimer": "link to disclaimer file online",
+        "min": <minimum amount>,
+        "max": <maximum amount>
     },
     "other": {
         "node": "<the btc node your wallet is running on including rpcusername & rpcpassword>",

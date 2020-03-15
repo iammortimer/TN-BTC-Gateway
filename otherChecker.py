@@ -5,6 +5,7 @@ import PyCWaves
 import traceback
 import sharedfunc
 import bitcoinrpc.authproxy as authproxy
+from verification import verifier
 
 class OtherChecker(object):
     def __init__(self, config):
@@ -18,6 +19,7 @@ class OtherChecker(object):
         seed = os.getenv(self.config['tn']['seedenvname'], self.config['tn']['gatewaySeed'])
         self.tnAddress = self.pwTN.Address(seed=seed)
         self.tnAsset = self.pwTN.Asset(self.config['tn']['assetId'])
+        self.verifier = verifier(config)
 
         cursor = self.dbCon.cursor()
         self.lastScannedBlock = cursor.execute('SELECT height FROM heights WHERE chain = "Other"').fetchall()[0][0]
@@ -97,6 +99,8 @@ class OtherChecker(object):
                             
                     except Exception as e:
                         self.faultHandler(txInfo, "txerror", e=e)
+
+                    self.verifier.verifyTN(tx)
 
     def checkTx(self, tx):
         #check the transaction

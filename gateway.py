@@ -1,7 +1,11 @@
 import re
 import sqlite3 as sqlite
 import bitcoinrpc.authproxy as authproxy
+import os
+import PyCWaves
 import json
+from verification import verifier
+
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from starlette.status import HTTP_401_UNAUTHORIZED
@@ -10,10 +14,17 @@ import uvicorn
 from starlette.requests import Request
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
-import os
-import PyCWaves
+from starlette.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 security = HTTPBasic()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -96,7 +107,8 @@ async def getErrors(request: Request, username: str = Depends(get_current_userna
     if username == config["main"]["admin-username"]:
         dbCon = sqlite.connect('gateway.db')
         result = dbCon.cursor().execute('SELECT * FROM executed').fetchall()
-        return templates.TemplateResponse("tx.html", {"request": request, "txs": result})
+        result2 = dbCon.cursor().execute('SELECT * FROM verified').fetchall()
+        return templates.TemplateResponse("tx.html", {"request": request, "txs": result, "vtxs": result2})
 
 @app.get('/ethAddress/{address}')
 async def checkTunnel(address):
@@ -143,19 +155,36 @@ async def api_fullinfo(request: Request):
             "tn_gateway_fee":config['tn']['gateway_fee'],
             "tn_network_fee":config['tn']['network_fee'],
             "tn_total_fee":config['tn']['network_fee']+config['tn']['gateway_fee'],
-            "eth_gateway_fee":config['other']['gateway_fee'],
-            "eth_network_fee":config['other']['network_fee'],
-            "eth_total_fee":config['other']['network_fee'] + config['other']['gateway_fee'],
+            "other_gateway_fee":config['other']['gateway_fee'],
+            "other_network_fee":config['other']['network_fee'],
+            "other_total_fee":config['other']['network_fee'] + config['other']['gateway_fee'],
             "fee": config['tn']['fee'],
             "company": config['main']['company'],
             "email": config['main']['contact-email'],
             "telegram": config['main']['contact-telegram'],
             "recovery_amount":config['main']['recovery_amount'],
             "recovery_fee":config['main']['recovery_fee'],
-            "ethHeight": heights['Other'],
+            "otherHeight": heights['Other'],
             "tnHeight": heights['TN'],
             "tnAddress": config['tn']['gatewayAddress'],
-            "ethAddress": config['other']['gatewayAddress'],
+            "otherAddress": config['other']['gatewayAddress'],
             "disclaimer": config['main']['disclaimer'],
             "tn_balance": tnBalance,
-            "other_balance": otherBalance}
+            "other_balance": otherBalance,
+            "minAmount": config['main']['min'],
+            "maxAmount": config['main']['max'],
+            "type": "tunnel"}
+
+@app.get("/api/deposit/{tnAddress}")
+async def api_depositCheck(tnAddress):
+    checkit = verifier(config)
+    result = checkit.checkDeposit(address=tnAddress)
+
+    return result
+
+@app.get("/api/wd/{tnAddress}")
+async def api_wdCheck(tnAddress):
+    checkit = verifier(config)
+    result = checkit.checkWD(address=tnAddress)
+
+    return result
