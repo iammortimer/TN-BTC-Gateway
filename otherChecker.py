@@ -107,21 +107,17 @@ class OtherChecker(object):
         result = None
         transaction = self.myProxy.getrawtransaction(tx,True)
         receivers = self.getReceivers(transaction)
+        cursor = self.dbCon.cursor()
+        tunnels = cursor.execute('SELECT sourceAddress FROM tunnel').fetchall()
 
         for receiver in receivers:
-            if receiver['address'] == self.config['other']['gatewayAddress']:
-                senders = self.getSenders(transaction)
-                if len(senders) == 1:
-                    sender = senders[0]
-                
-                    recipient = receiver['address']
+            for tunnel in tunnels:
+                if receiver['address'] == tunnel[0]:
+                    sender = receiver['address']
                     amount = receiver['amount']
 
-                    cursor = self.dbCon.cursor()
                     res = cursor.execute('SELECT tnTxId FROM executed WHERE otherTxId = "' + transaction['txid'] + '"').fetchall()
-                    if len(res) == 0: result =  { 'sender': sender, 'function': 'transfer', 'recipient': recipient, 'amount': amount, 'id': transaction['txid'] }
-                else:
-                    print(sharedfunc.getnow() + "TODO: Handle multiple senders, txid: " + transaction['txid'])
+                    if len(res) == 0: result =  { 'sender': sender, 'function': 'transfer', 'amount': amount, 'id': transaction['txid'] }
 
         return result
         
@@ -139,27 +135,6 @@ class OtherChecker(object):
                 receiver['amount'] = vout['value']
 
                 results.append(receiver)
-
-        return results
-
-    def getSenders(self, tx):
-        results = list() 
-
-        if 'vin' not in tx:
-            return results
-
-        for vin in tx['vin']:
-            if ('txid' not in vin) or ('vout' not in vin):
-                continue
-
-            vin_transaction = self.myProxy.getrawtransaction(vin['txid'],True)
-
-            if 'addresses' not in vin_transaction['vout'][vin['vout']]['scriptPubKey']:
-                continue
-
-            for address in vin_transaction['vout'][vin['vout']]['scriptPubKey']['addresses']:
-                if address not in results:
-                    results.append(address)
 
         return results
 

@@ -110,40 +110,36 @@ async def getErrors(request: Request, username: str = Depends(get_current_userna
         result2 = dbCon.cursor().execute('SELECT * FROM verified').fetchall()
         return templates.TemplateResponse("tx.html", {"request": request, "txs": result, "vtxs": result2})
 
-@app.get('/ethAddress/{address}')
+@app.get('/tnAddress/{address}')
 async def checkTunnel(address):
     dbCon = sqlite.connect('gateway.db')
     address = re.sub('[\W_]+', '', address)
     values = (address,)
 
-    result = dbCon.cursor().execute('SELECT targetAddress FROM tunnel WHERE sourceAddress = ?', values).fetchall()
+    result = dbCon.cursor().execute('SELECT sourceAddress FROM tunnel WHERE targetAddress = ?', values).fetchall()
     if len(result) == 0:
-        targetAddress = None
+        sourceAddress = None
     else:
-        targetAddress = result[0][0]
+        sourceAddress = result[0][0]
 
-    return { 'sourceAddress': address, 'targetAddress': targetAddress }
+    return { 'sourceAddress': sourceAddress, 'targetAddress': address }
 
-@app.get('/tunnel/{sourceAddress}/{targetAddress}')
-async def createTunnel(sourceAddress, targetAddress):
+@app.get('/tunnel/{targetAddress}')
+async def createTunnel(targetAddress):
     dbCon = sqlite.connect('gateway.db')
-    sourceAddress = re.sub('[\W_]+', '', sourceAddress)
+    instance = authproxy.AuthServiceProxy(config['other']['node'])
+    sourceAddress = instance.getnewaddress()
     targetAddress = re.sub('[\W_]+', '', targetAddress)
     values = (sourceAddress, targetAddress)
 
-    result = dbCon.cursor().execute('SELECT targetAddress FROM tunnel WHERE sourceAddress = ?', (sourceAddress,)).fetchall()
+    result = dbCon.cursor().execute('SELECT sourceAddress FROM tunnel WHERE targetAddress = ?', (targetAddress,)).fetchall()
     if len(result) == 0:
-        instance = authproxy.AuthServiceProxy(config['other']['node'])
-        valAddress = instance.validateaddress(sourceAddress)
-        if valAddress['isvalid']:
-            dbCon.cursor().execute('INSERT INTO TUNNEL ("sourceAddress", "targetAddress") VALUES (?, ?)', values)
-            dbCon.commit()
+        dbCon.cursor().execute('INSERT INTO TUNNEL ("sourceAddress", "targetAddress") VALUES (?, ?)', values)
+        dbCon.commit()
 
-            return { 'successful': True }
-        else:
-            return { 'successful': False }    
+        return { 'successful': 1, 'address': sourceAddress }
     else:
-        return { 'successful': False }    
+        return { 'successful': 2, 'address': result[0][0] }    
 
 @app.get("/api/fullinfo")
 async def api_fullinfo(request: Request):

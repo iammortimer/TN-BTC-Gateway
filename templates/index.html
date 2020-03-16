@@ -63,12 +63,11 @@
 					<strong>To Send {{chainName}} to Turtle Network,</strong>
         </h3>
         <p>
-          - Fill in your source {{chainName}} wallet address and the receiving Turtle Network wallet address below</br>
+          - Fill in the receiving Turtle Network wallet address below</br>
           - Click "Establish Tunnel"</br>
-          - From your {{chainName}} wallet send the {{chainName}} tokens to the gateway wallet</br>
-          - Recipient's Address = {{ ethAddress }}</br>
+          - From your {{chainName}} wallet send the {{chainName}} tokens to the generated address</br>
           - Tunnels are one time use, they are deleted after a succesfull transfer</br>
-          - If you want to verify a tunnel fill in your BTC wallet address and click "Check BTC Tunnel"</br>
+          - If you want to verify a tunnel fill in your TN wallet address and click "Check BTC Tunnel"</br>
         </p>
       </div>
     </div>
@@ -80,22 +79,22 @@
         <table style="width:100%">
             <tr>
                 <td>
-                  <label for="ethAddress">
-                    {{chainName}} Address
+                  <label for="tnAddress">
+                    TN Address
                   </label>
                 </td>
                 <td>
-                  <label for="tnAddress">
-                    TN Address
+                  <label for="ethAddress">
+                    {{chainName}} Address (deposit here)
                   </label>
                 </td>
             </tr>
             <tr>
                 <td>
-                  <input type="text" class="form-control" id="ethAddress" style="width:90%" />
+                  <input type="text" class="form-control" id="tnAddress" style="width:90%" />
                 </td>
                 <td>
-                  <input type="text" class="form-control" id="tnAddress" style="width:90%" />
+                  <input type="text" class="form-control" id="ethAddress" style="width:90%" readonly />
                 </td>
             </tr>
         </table>
