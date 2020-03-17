@@ -17,7 +17,7 @@ class OtherChecker(object):
         self.pwTN.setNode(node=self.config['tn']['node'], chain=self.config['tn']['network'], chain_id='L')
         self.pwTN.THROW_EXCEPTION_ON_ERROR = True
         seed = os.getenv(self.config['tn']['seedenvname'], self.config['tn']['gatewaySeed'])
-        #self.tnAddress = self.pwTN.Address(seed=seed)
+        self.tnAddress = self.pwTN.Address(seed=seed)
         self.tnAsset = self.pwTN.Asset(self.config['tn']['assetId'])
         self.verifier = verifier(config)
 
@@ -82,11 +82,9 @@ class OtherChecker(object):
                     try:
                         addr = self.pwTN.Address(targetAddress)
                         if self.config['tn']['assetId'] == 'TN':
-                            #tx = self.tnAddress.sendWaves(addr, amount, 'Thanks for using our service!', txFee=2000000)
-                            tx = {'id': 'test'}
+                            tx = self.tnAddress.sendWaves(addr, amount, 'Thanks for using our service!', txFee=2000000)
                         else:
-                            #tx = self.tnAddress.sendAsset(addr, self.tnAsset, amount, 'Thanks for using our service!', txFee=2000000)
-                            tx = {'id': 'test'}
+                            tx = self.tnAddress.sendAsset(addr, self.tnAsset, amount, 'Thanks for using our service!', txFee=2000000)
 
                         if 'error' in tx:
                             self.faultHandler(txInfo, "senderror", e=tx['message'])
