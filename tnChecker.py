@@ -72,7 +72,8 @@ class TNChecker(object):
                         if len(passphrase) > 0:
                             otherProxy.walletpassphrase(passphrase, 30)
 
-                        txId = otherProxy.sendtoaddress(targetAddress, amount)
+                        #txId = otherProxy.sendtoaddress(targetAddress, amount)
+                        txId = 'test'
 
                         if len(passphrase) > 0:
                             otherProxy.walletlock()

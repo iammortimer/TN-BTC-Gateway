@@ -7,7 +7,7 @@ import setupDB
 from tnChecker import TNChecker
 from otherChecker import OtherChecker
 
-with open('config.json') as json_file:
+with open('config_run.json') as json_file:
     config = json.load(json_file)
 
 def main():

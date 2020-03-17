@@ -6,7 +6,7 @@ import bitcoinrpc.authproxy as authproxy
 class verifier(object):
     def __init__(self, config):
         self.config = config
-        self.dbCon = sqlite.connect('gateway.db')
+        self.dbCon = sqlite.connect('gateway.db', check_same_thread=False)
 
         self.pwTN = PyCWaves.PyCWaves()
         self.pwTN.setNode(node=self.config['tn']['node'], chain=self.config['tn']['network'], chain_id='L')
@@ -19,19 +19,19 @@ class verifier(object):
             block = otherProxy.getblock(verified['blockhash'])
 
             if block['height'] > 0:
-                values = ("Other", txId.hex(), block['height'])
+                values = ("Other", txId, block['height'])
                 cursor = self.dbCon.cursor()
                 cursor.execute('INSERT INTO verified ("chain", "tx", "block") VALUES (?, ?, ?)', values)
                 self.dbCon.commit()
                 print('tx to other verified!')
             else:
-                values = ("Other", txId.hex(), 0)
+                values = ("Other", txId, 0)
                 cursor = self.dbCon.cursor()
                 cursor.execute('INSERT INTO verified ("chain", "tx", "block") VALUES (?, ?, ?)', values)
                 self.dbCon.commit()
                 print('tx to other not verified!')
         except:
-            values = ("Other", txId.hex(), 0)
+            values = ("Other", txId, 0)
             cursor = self.dbCon.cursor()
             cursor.execute('INSERT INTO verified ("chain", "tx", "block") VALUES (?, ?, ?)', values)
             self.dbCon.commit()
