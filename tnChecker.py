@@ -86,7 +86,7 @@ class TNChecker(object):
                             #amount /= pow(10, self.config['other']['decimals'])
                             cursor.execute('INSERT INTO executed ("sourceAddress", "targetAddress", "tnTxId", "otherTxId", "amount", "amountFee") VALUES ("' + transaction['sender'] + '", "' + targetAddress + '", "' + transaction['id'] + '", "' + txId + '", "' + str(round(amount)) + '", "' + str(self.config['other']['fee']) + '")')
                             self.dbCon.commit()
-                            print(self.config['main']['name'] & ' tokens withdrawn from tn!')
+                            print(self.config['main']['name'] + ' tokens withdrawn from tn!')
                     except Exception as e:
                         self.faultHandler(transaction, "txerror", e=e)
 
