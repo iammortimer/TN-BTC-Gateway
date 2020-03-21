@@ -4,7 +4,7 @@ function checkETHAddress(event) {
 
     fetch('/tnAddress/' + tnAddress).then(function(response) {
         response.json().then(function(result) {
-            if (result.targetAddress == null) {
+            if (result.sourceAddress == null) {
                 alert('No tunnel defined for target address: ' + result.targetAddress);
             } else {
                 alert('Tunnel already established from ' + result.sourceAddress + ' to ' + result.targetAddress + '');
@@ -34,6 +34,8 @@ function establishTunnel(event) {
                 alert('Tunnel already established!');
                 document.getElementById("ethAddress").value = result.address;
                 document.getElementById("ethAddress").readonly = false
+            } else {
+                alert('Invalid address!');
             }
         });
     });

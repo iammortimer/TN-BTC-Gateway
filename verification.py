@@ -88,7 +88,7 @@ class verifier(object):
             return {'error': 'invalid address'}
         else:
             cursor = self.dbCon.cursor()
-            sql = 'SELECT ethTxId FROM executed WHERE sourceAddress = ? ORDER BY id DESC LIMIT 1'
+            sql = 'SELECT otherTxId FROM executed WHERE sourceAddress = ? ORDER BY id DESC LIMIT 1'
             tx = cursor.execute(sql, (address, )).fetchall()
 
             if len(tx) == 0:

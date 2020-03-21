@@ -69,10 +69,10 @@ async def index(request: Request):
                                                      "assetID": config['tn']['assetId'],
                                                      "tn_gateway_fee":config['tn']['gateway_fee'],
                                                      "tn_network_fee":config['tn']['network_fee'],
-                                                     "tn_total_fee":config['tn']['network_fee']+config['tn']['gateway_fee'],
+                                                     "tn_total_fee":config['tn']['fee'],
                                                      "eth_gateway_fee":config['other']['gateway_fee'],
                                                      "eth_network_fee":config['other']['network_fee'],
-                                                     "eth_total_fee":config['other']['network_fee'] + config['other']['gateway_fee'],
+                                                     "eth_total_fee":config['other']['fee'],
                                                      "fee": config['tn']['fee'],
                                                      "company": config['main']['company'],
                                                      "email": config['main']['contact-email'],
@@ -128,6 +128,12 @@ async def checkTunnel(address):
 
 @app.get('/tunnel/{targetAddress}')
 async def createTunnel(targetAddress):
+    pwTN = PyCWaves.PyCWaves()
+    pwTN.setNode(node=config['tn']['node'], chain=config['tn']['network'], chain_id='L')
+
+    if not pwTN.validateAddress(targetAddress):
+            return {'successful': '0'}
+
     dbCon = sqlite.connect('gateway.db')
     instance = authproxy.AuthServiceProxy(config['other']['node'])
     sourceAddress = instance.getnewaddress()
