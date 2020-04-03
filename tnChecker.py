@@ -66,31 +66,34 @@ class TNChecker(object):
                     amount = transaction['amount'] / pow(10, self.config['tn']['decimals'])
                     amount -= self.config['other']['fee']
 
-                    try:
-                        passphrase = os.getenv(self.config['other']['passenvname'], self.config['other']['passphrase'])
+                    if amount < 0:
+                        self.faultHandler(transaction, "senderror", e='under minimum amount')
+                    else:
+                        try:
+                            passphrase = os.getenv(self.config['other']['passenvname'], self.config['other']['passphrase'])
 
-                        if len(passphrase) > 0:
-                            otherProxy.walletpassphrase(passphrase, 30)
+                            if len(passphrase) > 0:
+                                otherProxy.walletpassphrase(passphrase, 30)
 
-                        txId = otherProxy.sendtoaddress(targetAddress, amount)
+                            txId = otherProxy.sendtoaddress(targetAddress, amount)
 
-                        if len(passphrase) > 0:
-                            otherProxy.walletlock()
+                            if len(passphrase) > 0:
+                                otherProxy.walletlock()
 
-                        if 'error' in txId:
-                            self.faultHandler(transaction, "senderror", e=txId)
-                        else:
-                            print("send tx: " + txId)
+                            if 'error' in txId:
+                                self.faultHandler(transaction, "senderror", e=txId)
+                            else:
+                                print("send tx: " + txId)
 
-                            cursor = self.dbCon.cursor()
-                            #amount /= pow(10, self.config['other']['decimals'])
-                            cursor.execute('INSERT INTO executed ("sourceAddress", "targetAddress", "tnTxId", "otherTxId", "amount", "amountFee") VALUES ("' + transaction['sender'] + '", "' + targetAddress + '", "' + transaction['id'] + '", "' + txId + '", "' + str(round(amount)) + '", "' + str(self.config['other']['fee']) + '")')
-                            self.dbCon.commit()
-                            print(self.config['main']['name'] + ' tokens withdrawn from tn!')
-                    except Exception as e:
-                        self.faultHandler(transaction, "txerror", e=e)
+                                cursor = self.dbCon.cursor()
+                                #amount /= pow(10, self.config['other']['decimals'])
+                                cursor.execute('INSERT INTO executed ("sourceAddress", "targetAddress", "tnTxId", "otherTxId", "amount", "amountFee") VALUES ("' + transaction['sender'] + '", "' + targetAddress + '", "' + transaction['id'] + '", "' + txId + '", "' + str(round(amount)) + '", "' + str(self.config['other']['fee']) + '")')
+                                self.dbCon.commit()
+                                print(self.config['main']['name'] + ' tokens withdrawn from tn!')
+                        except Exception as e:
+                            self.faultHandler(transaction, "txerror", e=e)
 
-                    self.verifier.verifyOther(txId)
+                        self.verifier.verifyOther(txId)
 
     def checkTx(self, tx):
         #check the transaction

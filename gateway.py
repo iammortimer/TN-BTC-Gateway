@@ -177,7 +177,8 @@ async def api_fullinfo(request: Request):
             "other_balance": otherBalance,
             "minAmount": config['main']['min'],
             "maxAmount": config['main']['max'],
-            "type": "deposit"}
+            "type": "deposit",
+            "usageinfo": ""}
 
 @app.get("/api/deposit/{tnAddress}")
 async def api_depositCheck(tnAddress):

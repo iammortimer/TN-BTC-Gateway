@@ -79,32 +79,39 @@ class OtherChecker(object):
                     amount *= pow(10, self.config['tn']['decimals'])
                     amount = int(round(amount))
 
-                    try:
-                        addr = self.pwTN.Address(targetAddress)
-                        if self.config['tn']['assetId'] == 'TN':
-                            tx = self.tnAddress.sendWaves(addr, amount, 'Thanks for using our service!', txFee=2000000)
-                        else:
-                            tx = self.tnAddress.sendAsset(addr, self.tnAsset, amount, 'Thanks for using our service!', txFee=2000000)
+                    if amount < 0:
+                        txInfo['recipient'] = targetAddress
+                        self.faultHandler(txInfo, "senderror", e='under minimum amount')
+                        cursor = self.dbCon.cursor()
+                        cursor.execute('DELETE FROM tunnel WHERE sourceAddress = "' + txInfo['sender'] + '" and targetAddress = "' + targetAddress + '"')
+                        self.dbCon.commit()
+                    else:
+                        try:
+                            addr = self.pwTN.Address(targetAddress)
+                            if self.config['tn']['assetId'] == 'TN':
+                                tx = self.tnAddress.sendWaves(addr, amount, 'Thanks for using our service!', txFee=2000000)
+                            else:
+                                tx = self.tnAddress.sendAsset(addr, self.tnAsset, amount, 'Thanks for using our service!', txFee=2000000)
 
-                        if 'error' in tx:
-                            self.faultHandler(txInfo, "senderror", e=tx['message'])
-                        else:
-                            print("send tx: " + str(tx))
+                            if 'error' in tx:
+                                self.faultHandler(txInfo, "senderror", e=tx['message'])
+                            else:
+                                print("send tx: " + str(tx))
 
-                            cursor = self.dbCon.cursor()
-                            amount /= pow(10, self.config['tn']['decimals'])
-                            cursor.execute('INSERT INTO executed ("sourceAddress", "targetAddress", "otherTxId", "tnTxId", "amount", "amountFee") VALUES ("' + txInfo['sender'] + '", "' + targetAddress + '", "' + txInfo['id'] + '", "' + tx['id'] + '", "' + str(round(amount)) + '", "' + str(self.config['tn']['fee']) + '")')
-                            self.dbCon.commit()
-                            print(self.config['main']['name'] + ' tokens deposited on tn!')
+                                cursor = self.dbCon.cursor()
+                                amount /= pow(10, self.config['tn']['decimals'])
+                                cursor.execute('INSERT INTO executed ("sourceAddress", "targetAddress", "otherTxId", "tnTxId", "amount", "amountFee") VALUES ("' + txInfo['sender'] + '", "' + targetAddress + '", "' + txInfo['id'] + '", "' + tx['id'] + '", "' + str(round(amount)) + '", "' + str(self.config['tn']['fee']) + '")')
+                                self.dbCon.commit()
+                                print(self.config['main']['name'] + ' tokens deposited on tn!')
 
-                            cursor = self.dbCon.cursor()
-                            cursor.execute('DELETE FROM tunnel WHERE sourceAddress = "' + txInfo['sender'] + '" and targetAddress = "' + targetAddress + '"')
-                            self.dbCon.commit()
-                            
-                    except Exception as e:
-                        self.faultHandler(txInfo, "txerror", e=e)
+                                cursor = self.dbCon.cursor()
+                                cursor.execute('DELETE FROM tunnel WHERE sourceAddress = "' + txInfo['sender'] + '" and targetAddress = "' + targetAddress + '"')
+                                self.dbCon.commit()
+                                
+                        except Exception as e:
+                            self.faultHandler(txInfo, "txerror", e=e)
 
-                    self.verifier.verifyTN(tx)
+                        self.verifier.verifyTN(tx)
 
     def checkTx(self, tx):
         #check the transaction
