@@ -66,7 +66,7 @@ class TNChecker(object):
                     amount = transaction['amount'] / pow(10, self.config['tn']['decimals'])
                     amount -= self.config['other']['fee']
 
-                    if amount < 0:
+                    if amount <= 0:
                         self.faultHandler(transaction, "senderror", e='under minimum amount')
                     else:
                         try:
