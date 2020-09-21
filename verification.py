@@ -1,106 +1,210 @@
-import sqlite3 as sqlite
-import time
-import PyCWaves
-import bitcoinrpc.authproxy as authproxy
+from dbClass import dbCalls
+from dbPGClass import dbPGCalls
+from tnClass import tnCalls
+from otherClass import otherCalls
 
 class verifier(object):
     def __init__(self, config):
         self.config = config
-        self.dbCon = sqlite.connect('gateway.db', check_same_thread=False)
+        self.tnc = tnCalls(config)
 
-        self.pwTN = PyCWaves.PyCWaves()
-        self.pwTN.setNode(node=self.config['tn']['node'], chain=self.config['tn']['network'], chain_id='L')
-
-    def verifyOther(self, txId):
-        otherProxy = authproxy.AuthServiceProxy(self.config['other']['node'])
-        try:
-            time.sleep(60)
-            verified = otherProxy.gettransaction(txId)
-            block = otherProxy.getblock(verified['blockhash'])
-
-            if block['height'] > 0:
-                values = ("Other", txId, block['height'])
-                cursor = self.dbCon.cursor()
-                cursor.execute('INSERT INTO verified ("chain", "tx", "block") VALUES (?, ?, ?)', values)
-                self.dbCon.commit()
-                print('tx to other verified!')
-            else:
-                values = ("Other", txId, 0)
-                cursor = self.dbCon.cursor()
-                cursor.execute('INSERT INTO verified ("chain", "tx", "block") VALUES (?, ?, ?)', values)
-                self.dbCon.commit()
-                print('tx to other not verified!')
-        except:
-            values = ("Other", txId, 0)
-            cursor = self.dbCon.cursor()
-            cursor.execute('INSERT INTO verified ("chain", "tx", "block") VALUES (?, ?, ?)', values)
-            self.dbCon.commit()
-            print('tx to other not verified!')
-
-    def verifyTN(self, tx):
-        try:
-            time.sleep(60)
-            verified = self.pwTN.tx(tx['id'])
-
-            if verified['height'] > 0:
-                values = ("TN", tx['id'], verified['height'])
-                cursor = self.dbCon.cursor()
-                cursor.execute('INSERT INTO verified ("chain", "tx", "block") VALUES (?, ?, ?)', values)
-                self.dbCon.commit()
-                print('tx to tn verified!')
-            else:
-                values = ("TN", tx['id'], 0)
-                cursor = self.dbCon.cursor()
-                cursor.execute('INSERT INTO verified ("chain", "tx", "block") VALUES (?, ?, ?)', values)
-                self.dbCon.commit()
-                print('tx to tn not verified!')
-        except:
-            values = ("TN", tx['id'], 0)
-            cursor = self.dbCon.cursor()
-            cursor.execute('INSERT INTO verified ("chain", "tx", "block") VALUES (?, ?, ?)', values)
-            self.dbCon.commit()
-            print('tx to tn not verified!')
-
-    def checkDeposit(self, address):
-        if not self.pwTN.validateAddress(address):
-            return {'error': 'invalid address'}
+        if self.config['main']['use-pg']:
+            self.db = dbPGCalls(config)
         else:
-            cursor = self.dbCon.cursor()
-            sql = 'SELECT tnTxId FROM executed WHERE targetAddress = ? ORDER BY id DESC LIMIT 1'
-            tx = cursor.execute(sql, (address, )).fetchall()
+            self.db = dbCalls(config)
 
-            if len(tx) == 0:
-                return {'error': 'no tx found'}
-            else:
-                sql = 'SELECT block FROM verified WHERE tx = ?'
-                result = cursor.execute(sql, (tx[0][0], )).fetchall()
+        self.otc = otherCalls(config)
 
-                if len(result) == 0:
-                    return {'txVerified': False, 'tx': tx[0][0], 'block': 0} 
-                else:
-                    if result[0][0] > 0:
-                        return {'txVerified': True, 'tx': tx[0][0], 'block': result[0][0]} 
-                    else:
-                        return {'txVerified': False, 'tx': tx[0][0], 'block': result[0][0]} 
+    def checkTX(self, targetAddress = '', sourceAddress = ''):
+        result = {'status': '', 'tx': '', 'block': '', 'error': ''}
 
-    def checkWD(self, address):
-        if not self.pwTN.validateAddress(address):
-            return {'error': 'invalid address'}
+        if targetAddress != '':
+            address = targetAddress
+        elif  sourceAddress != '':
+            address = sourceAddress
         else:
-            cursor = self.dbCon.cursor()
-            sql = 'SELECT otherTxId FROM executed WHERE sourceAddress = ? ORDER BY id DESC LIMIT 1'
-            tx = cursor.execute(sql, (address, )).fetchall()
+            result['status'] = 'error'
+            result['error'] = 'invalid address'
+            return result
 
-            if len(tx) == 0:
-                return {'error': 'no tx found'}
-            else:
-                sql = 'SELECT block FROM verified WHERE tx = ?'
-                result = cursor.execute(sql, (tx[0][0], )).fetchall()
+        if not self.tnc.validateAddress(address):
+            result['status'] = 'error'
+            result['error'] = 'invalid address'
+            return result
+        else:
+            tx = self.db.getTunnelStatus(targetAddress=address)
 
-                if len(result) == 0:
-                    return {'txVerified': False, 'tx': tx[0][0], 'block': 0} 
-                else:
-                    if result[0][0] > 0:
-                        return {'txVerified': True, 'tx': tx[0][0], 'block': result[0][0]} 
+            if len(tx) != 0:
+                result['status'] = tx[0][0]
+                
+                if result['status'] == "sending" or result['status'] == "verifying":
+                    resexec = self.checkExecuted(targetAddress=targetAddress, sourceAddress=sourceAddress)
+
+                    if 'error' in resexec:
+                        result['error'] = resexec['error']
                     else:
-                        return {'txVerified': False, 'tx': tx[0][0], 'block': result[0][0]} 
+                        result['tx'] = resexec['tx']
+                        result['block'] = resexec['block']
+                elif result['status'] == "created":
+                    return result
+                elif result['status'] == "error":
+                    resexec = self.db.getError(targetAddress=targetAddress, sourceAddress=sourceAddress)
+
+                    if len(resexec) != 0:
+                        result['error'] = resexec[0][0]
+                        if targetAddress != '':
+                            result['tx'] = resexec[0][2]
+                        else:
+                            result['tx'] = resexec[0][1]
+            else:
+                resexec = self.checkExecuted(targetAddress=targetAddress, sourceAddress=sourceAddress)
+
+                if 'error' in resexec:
+                    result['error'] = resexec['error']
+                else:
+                    result['tx'] = resexec['tx']
+                    result['block'] = resexec['block']
+
+        return result
+
+    def checkExecuted(self, targetAddress = '', sourceAddress = ''):
+        if targetAddress != '':
+            tx = self.db.getExecuted(targetAddress=targetAddress)
+        elif  sourceAddress != '':
+            tx = self.db.getExecuted(sourceAddress=sourceAddress)
+        else:
+            return {'error': 'invalid address'}
+        
+        if len(tx) == 0:
+            return {'error': 'no tx found'}
+        else:
+            tx = tx[0][0]
+            result = self.db.getVerified(tx)
+
+            if result is None:
+                return {'txVerified': False, 'tx': tx, 'block': 0} 
+            else:
+                if result > 0:
+                    return {'txVerified': True, 'tx': tx, 'block': result} 
+                else:
+                    return {'txVerified': False, 'tx': tx, 'block': result} 
+
+    def checkHealth(self):
+        connTN = self.chConnection('TN')
+        connOther = self.chConnection('other')
+        heightTN = self.chHeight('TN')
+        heightOther = self.chHeight('other')
+        balanceTN = self.chBalance('TN')
+        balanceOther = self.chBalance('other')
+        numErrors = self.chErrors()
+
+        total = 0
+
+        if connTN: total += 100
+        if connOther: total += 100
+
+        if heightOther < 100: total += 100
+        elif heightOther > 100: total += 50
+        if heightTN < 100: total += 100
+        elif heightTN > 100: total += 50
+
+        if (self.config["main"]["max"] * 10) > balanceOther > 0: total += 100
+        if (self.config["main"]["max"] * 10) > balanceTN > 0: total += 100
+
+        if numErrors == 0: total += 100
+        elif numErrors < 10: total += 50
+
+        if not connTN or not connOther:
+            status = "red"
+        elif total == 700:
+            status = "green"
+        else:
+            status = "yellow"
+        
+        result = {
+            "status": status,
+            "connectionTN": connTN,
+            "connectionOther": connOther,
+            "blocksbehindTN": heightTN,
+            "blockbehindOther": heightOther,
+            "balanceTN": balanceTN,
+            "balanceOther": balanceOther,
+            "numberErrors": numErrors
+        }
+
+        return result
+
+    def chConnection(self, chain):
+        if chain == 'TN':
+            try:
+                value = self.tnc.currentBlock()
+            except:
+                value = 0
+        else:
+            try:
+                value = self.otc.currentBlock()
+            except:
+                value = 0
+
+        if value > 0:
+            return True
+        else:
+            return False
+
+    def chHeight(self, chain):
+        if chain == 'TN':
+            try:
+                current = self.tnc.currentBlock() - self.config["tn"]["confirmations"]
+            except:
+                current = 0
+
+            lastscanned = self.db.lastScannedBlock("TN")
+        else:
+            try:
+                current = self.otc.currentBlock() - self.config["other"]["confirmations"]
+            except:
+                current = 0
+
+            lastscanned = self.db.lastScannedBlock("Other")
+
+        if current > 0:
+            diff = current - lastscanned
+            return diff
+        else:
+            return -1
+
+    def chBalance(self, chain):
+        if chain == 'TN':
+            try:
+                current = self.tnc.currentBalance()
+            except:
+                current = 0
+        else:
+            try:
+                current = self.otc.currentBalance()
+            except:
+                current = 0
+
+        #if current > 0:
+            #if current < self.config["main"]["max"]:
+            #    return "Too low"
+            #elif current > (self.config["main"]["max"] * 10):
+            #    return "Too high"
+            #else:
+            #    return "Good"
+        #else:
+        #    return "Error"
+        return current
+
+    def chErrors(self):
+        errors = self.db.getErrors()
+
+        #if len(errors) > 50:
+        #    return "Bad"
+        #elif 10 < len(errors) < 50:
+        #    return "Fair"
+        #else:
+        #    return "Good"
+        
+        return len(errors)
+

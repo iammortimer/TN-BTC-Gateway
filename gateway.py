@@ -1,10 +1,15 @@
 import re
-import sqlite3 as sqlite
-import bitcoinrpc.authproxy as authproxy
-import os
-import PyCWaves
 import json
+import datetime
+import os
+from typing import List, Optional
+from pydantic import BaseModel
+
 from verification import verifier
+from dbClass import dbCalls
+from dbPGClass import dbPGCalls
+from otherClass import otherCalls
+from tnClass import tnCalls
 
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -15,6 +20,85 @@ from starlette.requests import Request
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 from starlette.middleware.cors import CORSMiddleware
+
+class cHeights(BaseModel):
+    TN: int
+    Other: int
+
+class cAdresses(BaseModel):
+    sourceAddress: str
+    targetAddress: str
+
+class cExecResult(BaseModel):
+    successful: int
+    sourceAddress: str
+
+class cDustkey(BaseModel):
+    successful: bool
+    dustKey: int = None
+
+class cFullInfo(BaseModel):
+    chainName: str
+    assetID: str
+    tn_gateway_fee: float
+    tn_network_fee: float
+    tn_total_fee: float
+    other_gateway_fee: float
+    other_network_fee: float
+    other_total_fee: float
+    fee: float
+    company: str
+    email: str
+    telegram: str
+    recovery_amount: float
+    recovery_fee: float
+    otherHeight: int
+    tnHeight: int
+    tnAddress: str
+    tnColdAddress: str
+    otherAddress: str
+    otherNetwork: str
+    disclaimer: str
+    tn_balance: int
+    other_balance: int
+    minAmount: float
+    maxAmount: float
+    type: str
+    usageinfo: str
+
+class cDepositWD(BaseModel):
+    status: str
+    tx: str
+    block: str
+    error: str
+
+class cTx(BaseModel):
+    sourceAddress: str
+    targetAddress: str
+    tnTxId: str
+    OtherTxId: str
+    TNVerBlock: int = 0
+    OtherVerBlock: int = 0
+    amount: float
+    TypeTX: str
+    Status: str
+
+class cTxs(BaseModel):
+    transactions: List[cTx] = []
+    error: str = ""
+
+class cFees(BaseModel):
+    totalFees: float
+
+class cHealth(BaseModel):
+    status: str
+    connectionTN: bool
+    connectionOther: bool
+    blocksbehindTN: int
+    blockbehindOther: int
+    balanceTN: float
+    balanceOther: float
+    numberErrors: int
 
 app = FastAPI()
 app.add_middleware(
@@ -29,8 +113,16 @@ security = HTTPBasic()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-with open('config.json') as json_file:
+with open('config_run.json') as json_file:
     config = json.load(json_file)
+
+tnc = tnCalls(config)
+otc = otherCalls(config)
+
+if config['main']['use-pg']:
+    dbc = dbPGCalls(config)
+else:
+    dbc = dbCalls(config)
 
 checkit = verifier(config)
 
@@ -38,6 +130,7 @@ def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
     correct_username = secrets.compare_digest(credentials.username, config["main"]["admin-username"])
     correct_password = secrets.compare_digest(credentials.password, config["main"]["admin-password"])
     if not (correct_username and correct_password):
+        print("ERROR: invalid logon details")
         raise HTTPException(
             status_code=HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -46,33 +139,26 @@ def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
     return credentials.username
 
 def get_tnBalance():
-    pwTN = PyCWaves.PyCWaves()
-    pwTN.THROW_EXCEPTION_ON_ERROR = True
-    pwTN.setNode(node=config['tn']['node'], chain=config['tn']['network'], chain_id='L')
-    seed = os.getenv(config['tn']['seedenvname'], config['tn']['gatewaySeed'])
-    tnAddress = pwTN.Address(seed=seed)
-    myBalance = tnAddress.balance(assetId=config['tn']['assetId'])
-    myBalance /= pow(10, config['tn']['decimals'])
-    return int(round(myBalance))
+    return tnc.currentBalance()
 
 def get_otherBalance():
-    otherProxy = authproxy.AuthServiceProxy(config['other']['node'])
-    balance = otherProxy.getbalance()
-    return int(round(balance))
+    return otc.currentBalance()
 
 
 @app.get("/")
 async def index(request: Request):
     heights = await getHeights()
-    return templates.TemplateResponse("index.html", {"request": request, 
+    index = config['main']['index-file']
+    if index == "": index = "index.html"
+    return templates.TemplateResponse(index, {"request": request, 
                                                      "chainName": config['main']['name'],
                                                      "assetID": config['tn']['assetId'],
                                                      "tn_gateway_fee":config['tn']['gateway_fee'],
                                                      "tn_network_fee":config['tn']['network_fee'],
-                                                     "tn_total_fee":config['tn']['fee'],
+                                                     "tn_total_fee":config['tn']['network_fee']+config['tn']['gateway_fee'],
                                                      "eth_gateway_fee":config['other']['gateway_fee'],
                                                      "eth_network_fee":config['other']['network_fee'],
-                                                     "eth_total_fee":config['other']['fee'],
+                                                     "eth_total_fee":config['other']['network_fee'] + config['other']['gateway_fee'],
                                                      "fee": config['tn']['fee'],
                                                      "company": config['main']['company'],
                                                      "email": config['main']['contact-email'],
@@ -85,11 +171,11 @@ async def index(request: Request):
                                                      "ethAddress": config['other']['gatewayAddress'],
                                                      "disclaimer": config['main']['disclaimer']})
 
-@app.get('/heights')
+@app.get('/heights', response_model=cHeights)
 async def getHeights():
-    dbCon = sqlite.connect('gateway.db')
-    result = dbCon.cursor().execute('SELECT chain, height FROM heights WHERE chain = "Other" or chain = "TN"').fetchall()
-    return { result[0][0]: result[0][1], result[1][0]: result[1][1] }
+    result = dbc.getHeights()
+    
+    return {'TN': result[0][1], 'Other': result[1][1]}
 
 @app.get('/errors')
 async def getErrors(request: Request, username: str = Depends(get_current_username)):
@@ -97,60 +183,80 @@ async def getErrors(request: Request, username: str = Depends(get_current_userna
         return {"message": "change the default username and password please!"}
     
     if username == config["main"]["admin-username"]:
-        dbCon = sqlite.connect('gateway.db')
-        result = dbCon.cursor().execute('SELECT * FROM errors').fetchall()
+        print("INFO: displaying errors page")
+        result = dbc.getErrors()
         return templates.TemplateResponse("errors.html", {"request": request, "errors": result})
 
 @app.get('/executed')
-async def getErrors(request: Request, username: str = Depends(get_current_username)):
+async def getExecuted(request: Request, username: str = Depends(get_current_username)):
     if (config["main"]["admin-username"] == "admin" and config["main"]["admin-password"] == "admin"):
         return {"message": "change the default username and password please!"}
     
     if username == config["main"]["admin-username"]:
-        dbCon = sqlite.connect('gateway.db')
-        result = dbCon.cursor().execute('SELECT * FROM executed').fetchall()
-        result2 = dbCon.cursor().execute('SELECT * FROM verified').fetchall()
+        print("INFO: displaying executed page")
+        result = dbc.getExecutedAll()
+        result2 = dbc.getVerifiedAll()
         return templates.TemplateResponse("tx.html", {"request": request, "txs": result, "vtxs": result2})
 
-@app.get('/tnAddress/{address}')
-async def checkTunnel(address):
-    dbCon = sqlite.connect('gateway.db')
+@app.get('/tnAddress/{address}', response_model=cAdresses)
+async def checkTunnel(address: str):
     address = re.sub('[\W_]+', '', address)
-    values = (address,)
 
-    result = dbCon.cursor().execute('SELECT sourceAddress FROM tunnel WHERE targetAddress = ?', values).fetchall()
+    result = dbc.getSourceAddress(address)
     if len(result) == 0:
-        sourceAddress = None
+        targetAddress = ""
     else:
-        sourceAddress = result[0][0]
+        targetAddress = result
 
-    return { 'sourceAddress': sourceAddress, 'targetAddress': address }
+    return cAdresses(sourceAddress=targetAddress, targetAddress=address)
 
-@app.get('/tunnel/{targetAddress}')
-async def createTunnel(targetAddress):
-    pwTN = PyCWaves.PyCWaves()
-    pwTN.setNode(node=config['tn']['node'], chain=config['tn']['network'], chain_id='L')
-
-    if not pwTN.validateAddress(targetAddress):
-            return {'successful': '0'}
-
-    dbCon = sqlite.connect('gateway.db')
-    instance = authproxy.AuthServiceProxy(config['other']['node'])
-    sourceAddress = instance.getnewaddress()
+#TODO: rewrite to post
+@app.get('/tunnel/{targetAddress}', response_model=cExecResult)
+async def createTunnel(targetAddress: str):
     targetAddress = re.sub('[\W_]+', '', targetAddress)
-    values = (sourceAddress, targetAddress)
 
-    result = dbCon.cursor().execute('SELECT sourceAddress FROM tunnel WHERE targetAddress = ?', (targetAddress,)).fetchall()
+    if not tnc.validateAddress(targetAddress):
+        return cExecResult(successful=0, sourceAddress='')
+
+    result = dbc.getSourceAddress(targetAddress)
     if len(result) == 0:
-        dbCon.cursor().execute('INSERT INTO TUNNEL ("sourceAddress", "targetAddress") VALUES (?, ?)', values)
-        dbCon.commit()
+        sourceAddress = otc.getNewAddress()
 
-        return { 'successful': 1, 'address': sourceAddress }
+        dbc.insTunnel("created", sourceAddress, targetAddress)
+        print("INFO: tunnel created")
+        return cExecResult(successful=1, sourceAddress=sourceAddress)
     else:
-        return { 'successful': 2, 'address': result[0][0] }    
+        return cExecResult(successful=2, sourceAddress=result)
 
-@app.get("/api/fullinfo")
-async def api_fullinfo(request: Request):
+#TODO: rewrite to post
+@app.get('/dustkey/{targetAddress}', response_model=cDustkey)
+async def createTunnelDK(targetAddress: str):
+    if not tnc.validateAddress(targetAddress):
+        return {'successful': False}
+
+    sourceAddress = str(round(datetime.datetime.now().timestamp()))
+    sourceAddress = sourceAddress[-6:]
+
+    result = dbc.getTargetAddress(sourceAddress)
+    if len(result) == 0:
+        result = dbc.getSourceAddress(targetAddress)
+
+        if len(result) == 0:
+            dbc.insTunnel("created", sourceAddress, targetAddress)
+            print("INFO: tunnel created - dustkey")
+
+            return { 'successful': True, 'dustkey': sourceAddress}
+        else:
+            return { 'successful': True, 'dustkey': result }
+    else:
+        result = dbc.getSourceAddress(targetAddress)
+        if len(result) == 0:
+            return { 'successful': False }
+        else: 
+            return { 'successful': True, 'dustkey': result }
+
+@app.get("/api/fullinfo", response_model=cFullInfo)
+async def api_fullinfo():
     heights = await getHeights()
     tnBalance = get_tnBalance()
     otherBalance = get_otherBalance()
@@ -171,23 +277,66 @@ async def api_fullinfo(request: Request):
             "otherHeight": heights['Other'],
             "tnHeight": heights['TN'],
             "tnAddress": config['tn']['gatewayAddress'],
+            "tnColdAddress": config['tn']['coldwallet'],
             "otherAddress": config['other']['gatewayAddress'],
+            "otherNetwork": config['other']['network'],
             "disclaimer": config['main']['disclaimer'],
             "tn_balance": tnBalance,
             "other_balance": otherBalance,
             "minAmount": config['main']['min'],
             "maxAmount": config['main']['max'],
-            "type": "deposit",
+            "type": "tunnel",
             "usageinfo": ""}
 
-@app.get("/api/deposit/{tnAddress}")
-async def api_depositCheck(tnAddress):
-    result = checkit.checkDeposit(address=tnAddress)
+@app.get("/api/deposit/{tnAddress}", response_model=cDepositWD)
+async def api_depositCheck(tnAddress:str):
+    result = checkit.checkTX(targetAddress=tnAddress)
 
     return result
 
-@app.get("/api/wd/{tnAddress}")
-async def api_wdCheck(tnAddress):
-    result = checkit.checkWD(address=tnAddress)
+@app.get("/api/wd/{tnAddress}", response_model=cDepositWD)
+async def api_wdCheck(tnAddress: str):
+    result = checkit.checkTX(sourceAddress=tnAddress)
 
     return result
+
+@app.get("/api/checktxs/{tnAddress}", response_model=cTxs)
+async def api_checktxs(tnAddress: str):
+    if not tnc.validateAddress(tnAddress):
+        temp = cTxs(error='invalid address')
+    else:
+        result = dbc.checkTXs(address=tnAddress)
+
+        if 'error' in result:
+            temp = cTxs(error=result['error'])
+        else:
+            temp = cTxs(transactions=result)
+            
+    return temp
+
+@app.get("/api/checktxs", response_model=cTxs)
+async def api_checktxs():
+    result = dbc.checkTXs(address='')
+
+    if 'error' in result:
+        temp = cTxs(error=result['error'])
+    else:
+        temp = cTxs(transactions=result)
+
+    return temp
+
+@app.get('/api/fees/{fromdate}/{todate}', response_model=cFees)
+async def api_getFees(fromdate: str, todate: str):
+    return dbc.getFees(fromdate, todate)
+
+@app.get('/api/fees/{fromdate}', response_model=cFees)
+async def api_getFees(fromdate: str):
+    return dbc.getFees(fromdate, '')
+
+@app.get('/api/fees', response_model=cFees)
+async def api_getFees():
+    return dbc.getFees('','')
+
+@app.get('/api/health', response_model=cHealth)
+async def api_getHealth():
+    return checkit.checkHealth()

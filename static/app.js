@@ -24,15 +24,15 @@ function establishTunnel(event) {
         response.json().then(function(result) {
             if (result.successful == 1) {
                 alert('Tunnel successfully established!');
-                document.getElementById("ethAddress").value = result.address;
+                document.getElementById("ethAddress").value = result.sourceAddress;
                 document.getElementById("ethAddress").readonly = false
             } else if (result.successful == 2) {
                 alert('Tunnel already established!');
-                document.getElementById("ethAddress").value = result.address;
+                document.getElementById("ethAddress").value = result.sourceAddress;
                 document.getElementById("ethAddress").readonly = false
             } else if (result.successful == 3) {
                 alert('Tunnel already established!');
-                document.getElementById("ethAddress").value = result.address;
+                document.getElementById("ethAddress").value = result.sourceAddress;
                 document.getElementById("ethAddress").readonly = false
             } else {
                 alert('Invalid address!');

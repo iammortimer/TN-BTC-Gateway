@@ -9,25 +9,37 @@
         "recovery_fee": <recovery fee in %>,
         "admin-username": "admin",
         "admin-password": "admin",
-        "disclaimer": "link to a disclaimer file online",
+        "disclaimer": "link to disclaimer file online",
         "min": <minimum amount>,
-        "max": <maximum amount>
+        "max": <maximum amount>,
+        "index-file": "name of the index.html to use, if left blank index.html will be used",
+        "db-location": "directory name if the db file is not in the main directory",
+        "use-pg": <true or false, depending on if you want to use a postGres DB instead of sqlite>
+    },
+    "postgres": {
+        "pguser": "",
+        "pgpswd": "",
+        "pghost": "",
+        "pgport": 5432
     },
     "other": {
         "node": "<the btc node your wallet is running on including rpcusername & rpcpassword>",
         "passphrase": "if the node wallet is encrypted enter the passphrase here, otherwise leave empty",
         "passenvname" : "<the ENV name to store your passphrase instead of the field above>",
         "decimals": <number of decimals of the token>,
-        "gatewayAddress": "<Waves address of the gateway>",
+        "gatewayAddress": "<ETH address of the gateway>",
+        "coldwallet": "<ETH address of the gateway's cold wallet (if in use)>",
         "fee": <the total fee you want to collect on the gateway, calculated in the proxy token, e.g., 0.1>,
         "gateway_fee": <the gatewway part of the fee calculated in the proxy token, e.g., 0.1>,
         "network_fee": <the tx part of the fee calculated in the proxy token, e.g., 0.1>,
         "timeInBetweenChecks": <seconds in between a check for a new block>,
-        "confirmations": <number of confirmations necessary in order to accept a transaction>
+        "confirmations": <number of confirmations necessary in order to accept a transaction>,
+        "network": "Bitcoin"
     },
     "tn": {
         "gatewayAddress": "<TN address of the gateway>",
         "gatewaySeed": "<seed of the above devined address>",
+        "coldwallet": "<TN address of the gateway's cold wallet (if in use)>",
         "seedenvname" : "<the ENV name to store your seed instead of the field above>",
         "fee": <the fee you want to collect on the gateway, calculated in the proxy token, e.g., 0.1>,
         "gateway_fee": <the gatewway part of the fee calculated in the proxy token, e.g., 0.1>,
