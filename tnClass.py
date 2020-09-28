@@ -19,7 +19,7 @@ class tnCalls(object):
 
         self.pwTN = PyCWaves.PyCWaves()
         self.pwTN.THROW_EXCEPTION_ON_ERROR = True
-        self.pwTN.setNode(node=self.config['tn']['node'], chain=self.config['tn']['network'], chain_id='l')
+        self.pwTN.setNode(node=self.config['tn']['node'], chain=self.config['tn']['network'], chain_id=self.config['tn']['chainid'])
         seed = os.getenv(self.config['tn']['seedenvname'], self.config['tn']['gatewaySeed'])
         self.tnAddress = self.pwTN.Address(seed=seed)
         self.tnAsset = self.pwTN.Asset(self.config['tn']['assetId'])

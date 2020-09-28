@@ -63,7 +63,7 @@ class OtherChecker(object):
 
                     if txContinue:
                         targetAddress = res
-                        amount = txInfo['amount']
+                        amount = float(txInfo['amount'])
                         amount -= self.config['tn']['fee']
                         amount *= pow(10, self.config['tn']['decimals'])
                         amount = int(round(amount))

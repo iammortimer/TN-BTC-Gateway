@@ -94,7 +94,7 @@ class otherCalls(object):
                     sender = receiver['address']
                     amount = receiver['amount']
 
-                    if not self.db.didWeSendTx(tx.hex()): 
+                    if not self.db.didWeSendTx(tx): 
                         result = { 'sender': sender, 'function': 'transfer', 'recipient': '', 'amount': amount, 'id': transaction['txid'] }
 
         return result

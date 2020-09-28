@@ -47,6 +47,7 @@
         "assetId": "<the asset id of the proxy token on the TN platform>",
         "decimals": <number of decimals of the token>,
         "network": "<Waves network you want to connect to (testnet|mainnet)>",
+        "chainid": "L",
         "node": "<the TN node you want to connect to>",
         "timeInBetweenChecks": <seconds in between a check for a new block>,
         "confirmations": <number of confirmations necessary in order to accept a transaction>
