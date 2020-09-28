@@ -65,12 +65,12 @@ class TNChecker(object):
                                 txId = self.otc.sendTx(targetAddress, amount)
 
                                 if 'error' in txId:
-                                    self.faultHandler(transaction, "senderror", e=txId.hex())
+                                    self.faultHandler(transaction, "senderror", e=txId)
                                     self.db.updTunnel("error", transaction['sender'], targetAddress, statusOld="sending")
                                 else:
-                                    print("INFO: send tx: " + str(txId.hex()))
+                                    print("INFO: send tx: " + str(txId))
 
-                                    self.db.insExecuted(transaction['sender'], targetAddress, txId.hex(), transaction['id'], amount, self.config['other']['fee'])
+                                    self.db.insExecuted(transaction['sender'], targetAddress, txId, transaction['id'], amount, self.config['other']['fee'])
                                     print('INFO: send tokens from tn to other!')
 
                                     #self.db.delTunnel(transaction['sender'], targetAddress)
