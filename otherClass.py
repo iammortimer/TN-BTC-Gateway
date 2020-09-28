@@ -90,7 +90,7 @@ class otherCalls(object):
 
         for receiver in receivers:
             for tunnel in tunnels:
-                if receiver['address'] == tunnel[0]:
+                if receiver['address'] == tunnel:
                     sender = receiver['address']
                     amount = receiver['amount']
 
