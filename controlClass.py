@@ -8,16 +8,21 @@ from otherClass import otherCalls
 from verification import verifier
 
 class controller(object):
-    def __init__(self, config):
+    def __init__(self, config, db = None):
         self.config = config
-        self.tnc = tnCalls(config)
-        self.otc = otherCalls(config)
-        self.verifier = verifier(config)
 
-        if self.config['main']['use-pg']:
-            self.db = dbPGCalls(config)
+        if db == None:
+            if self.config['main']['use-pg']:
+                self.db = dbPGCalls(config)
+            else:
+                self.db = dbCalls(config)
         else:
-            self.db = dbCalls(config)
+            self.db = db
+
+        self.tnc = tnCalls(config, self.db)
+        self.verifier = verifier(config, self.db)
+        self.otc = otherCalls(config, self.db)
+
 
     def run(self):
         #main routine to run continuesly
@@ -39,8 +44,8 @@ class controller(object):
                     self.tnc.verifyTx(tx)
 
         while True:
-            print("INFO: Last scanned Other block: " + str(self.db.lastScannedBlock("Other")))
-            print("INFO: Last scanned TN block: " + str(self.db.lastScannedBlock("TN")))
+            #print("INFO: Last scanned Other block: " + str(self.db.lastScannedBlock("Other")))
+            #print("INFO: Last scanned TN block: " + str(self.db.lastScannedBlock("TN")))
 
             #handle tunnels on status 'verifying'
             to_verify = self.db.getTunnels(status='verifying')

@@ -8,16 +8,20 @@ from otherClass import otherCalls
 from verification import verifier
 
 class OtherChecker(object):
-    def __init__(self, config):
+    def __init__(self, config, db = None):
         self.config = config
-        self.tnc = tnCalls(config)
-        self.verifier = verifier(config)
-        self.otc = otherCalls(config)
 
-        if self.config['main']['use-pg']:
-            self.db = dbPGCalls(config)
+        if db == None:
+            if self.config['main']['use-pg']:
+                self.db = dbPGCalls(config)
+            else:
+                self.db = dbCalls(config)
         else:
-            self.db = dbCalls(config)
+            self.db = db
+
+        self.tnc = tnCalls(config, self.db)
+        self.verifier = verifier(config, self.db)
+        self.otc = otherCalls(config, self.db)
 
         self.lastScannedBlock = self.db.lastScannedBlock("Other")
 
