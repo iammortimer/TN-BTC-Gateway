@@ -63,7 +63,7 @@ class dbPGCalls(object):
                 sourceaddress text NOT NULL,
                 targetaddress text NOT NULL,
                 tntxid text NOT NULL,
-                otherTxId text NOT NULL,
+                othertxid text NOT NULL,
                 timestamp timestamp
                 default current_timestamp,
                 amount real,
@@ -76,7 +76,7 @@ class dbPGCalls(object):
                 sourceaddress text ,
                 targetaddress text ,
                 tntxid text ,
-                otherTxId text ,
+                othertxid text ,
                 timestamp timestamp
                 default current_timestamp,
                 amount real,
@@ -339,7 +339,7 @@ class dbPGCalls(object):
 
 #executed table related
     def insExecuted(self, sourceAddress, targetAddress, otherTxId, tntxid, amount, amountFee):
-        sql = 'INSERT INTO executed ("sourceaddress", "targetaddress", "otherTxId", "tntxid", "amount", "amountFee") VALUES (%s, %s, %s, %s, %s, %s)'
+        sql = 'INSERT INTO executed ("sourceaddress", "targetaddress", "othertxid", "tntxid", "amount", "amountFee") VALUES (%s, %s, %s, %s, %s, %s)'
         values = (sourceAddress, targetAddress, otherTxId, tntxid, amount, amountFee)
 
         dbCon = self.openConn()
@@ -349,7 +349,7 @@ class dbPGCalls(object):
         self.closeConn(dbCon)
 
     def updExecuted(self, id, sourceAddress, targetAddress, otherTxId, tntxid, amount, amountFee):
-        sql = 'UPDATE executed SET "sourceaddress" = %s, "targetaddress" = %s, "otherTxId" = %s, "tntxid" = %s, "amount" = %s, "amountFee" = %s) WHERE id = %s'
+        sql = 'UPDATE executed SET "sourceaddress" = %s, "targetaddress" = %s, "othertxid" = %s, "tntxid" = %s, "amount" = %s, "amountFee" = %s) WHERE id = %s'
         values = (sourceAddress, targetAddress, otherTxId, tntxid, amount, amountFee, id)
 
         dbCon = self.openConn()
@@ -359,7 +359,7 @@ class dbPGCalls(object):
         self.closeConn(dbCon)
 
     def didWeSendTx(self, txid):
-        sql = 'SELECT * FROM executed WHERE (otherTxId = %s OR tntxid = %s)'
+        sql = 'SELECT * FROM executed WHERE (othertxid = %s OR tntxid = %s)'
         values = (txid, txid)
 
         dbCon = self.openConn()
@@ -391,13 +391,13 @@ class dbPGCalls(object):
 
     def getExecuted(self, sourceAddress = '', targetAddress = '', otherTxId = '', tntxid = ''):
         if sourceAddress != '':
-            sql = 'SELECT otherTxId FROM executed WHERE sourceaddress = %s ORDER BY id DESC LIMIT 1'
+            sql = 'SELECT othertxid FROM executed WHERE sourceaddress = %s ORDER BY id DESC LIMIT 1'
             values = (sourceAddress,)
         elif targetAddress != '':
             sql = 'SELECT tntxid FROM executed WHERE targetaddress = %s ORDER BY id DESC LIMIT 1'
             values = (targetAddress,)
         elif otherTxId != '':
-            sql = 'SELECT * FROM executed WHERE otherTxId = %s ORDER BY id DESC LIMIT 1'
+            sql = 'SELECT * FROM executed WHERE othertxid = %s ORDER BY id DESC LIMIT 1'
             values = (otherTxId,)
         elif tntxid != '':
             sql = 'SELECT * FROM executed WHERE tntxid = %s ORDER BY id DESC LIMIT 1'
@@ -419,7 +419,7 @@ class dbPGCalls(object):
 
 #error table related
     def insError(self, sourceAddress, targetAddress, tntxid, otherTxId, amount, error, exception = ''):
-        sql = 'INSERT INTO errors ("sourceaddress", "targetaddress", "tntxid", "otherTxId", "amount", "error", "exception") VALUES (%s, %s, %s, %s, %s, %s, %s)'
+        sql = 'INSERT INTO errors ("sourceaddress", "targetaddress", "tntxid", "othertxid", "amount", "error", "exception") VALUES (%s, %s, %s, %s, %s, %s, %s)'
         values = (sourceAddress, targetAddress, tntxid, otherTxId, amount, error, exception)
 
         dbCon = self.openConn()
@@ -445,10 +445,10 @@ class dbPGCalls(object):
 
     def getError(self, sourceAddress='', targetAddress=''):
         if sourceAddress != '':
-            sql = 'SELECT error, tntxid, otherTxId FROM errors WHERE sourceaddress = %s ORDER BY id DESC LIMIT 1'
+            sql = 'SELECT error, tntxid, othertxid FROM errors WHERE sourceaddress = %s ORDER BY id DESC LIMIT 1'
             values = (sourceAddress,)
         elif targetAddress != '':
-            sql = 'SELECT error, tntxid, otherTxId FROM errors WHERE targetaddress = %s ORDER BY id DESC LIMIT 1'
+            sql = 'SELECT error, tntxid, othertxid FROM errors WHERE targetaddress = %s ORDER BY id DESC LIMIT 1'
             values = (targetAddress,)
         else:
             return {}
@@ -537,16 +537,16 @@ class dbPGCalls(object):
         if address == '':
             dbCon = self.openConn()
             cursor = dbCon.cursor()
-            sql = "SELECT e.sourceaddress, e.targetaddress, e.tntxid, e.otherTxId as OtherTxId, COALESCE(v.block, 0) as TNVerBlock, COALESCE(v2.block, 0) as OtherVerBlock, e.amount, CASE WHEN e.targetaddress LIKE '3J%%' THEN 'Deposit' ELSE 'Withdraw' END TypeTX, " \
+            sql = "SELECT e.sourceaddress, e.targetaddress, e.tntxid, e.othertxid as othertxid, COALESCE(v.block, 0) as TNVerBlock, COALESCE(v2.block, 0) as OtherVerBlock, e.amount, CASE WHEN e.targetaddress LIKE '3J%%' THEN 'Deposit' ELSE 'Withdraw' END TypeTX, " \
             "CASE WHEN e.targetaddress LIKE '3J%%' AND v.block IS NOT NULL THEN 'verified' WHEN e.targetaddress NOT LIKE '3J%%' AND v2.block IS NOT NULL AND v2.block > 0 THEN 'verified' ELSE 'unverified' END Status " \
-            "FROM executed e LEFT JOIN verified v ON e.tntxid = v.tx LEFT JOIN verified v2 ON e.otherTxId = v2.tx "
+            "FROM executed e LEFT JOIN verified v ON e.tntxid = v.tx LEFT JOIN verified v2 ON e.othertxid = v2.tx "
             cursor.execute(sql)
         else:
             dbCon = self.openConn()
             cursor = dbCon.cursor()
-            sql = "SELECT e.sourceaddress, e.targetaddress, e.tntxid, e.otherTxId as OtherTxId, COALESCE(v.block, 0) as TNVerBlock, COALESCE(v2.block, 0) as OtherVerBlock, e.amount, CASE WHEN e.targetaddress LIKE '3J%%' THEN 'Deposit' ELSE 'Withdraw' END TypeTX, " \
+            sql = "SELECT e.sourceaddress, e.targetaddress, e.tntxid, e.othertxid as othertxid, COALESCE(v.block, 0) as TNVerBlock, COALESCE(v2.block, 0) as OtherVerBlock, e.amount, CASE WHEN e.targetaddress LIKE '3J%%' THEN 'Deposit' ELSE 'Withdraw' END TypeTX, " \
             "CASE WHEN e.targetaddress LIKE '3J%%' AND v.block IS NOT NULL THEN 'verified' WHEN e.targetaddress NOT LIKE '3J%%' AND v2.block IS NOT NULL AND v2.block > 0 THEN 'verified' ELSE 'unverified' END Status " \
-            "FROM executed e LEFT JOIN verified v ON e.tntxid = v.tx LEFT JOIN verified v2 ON e.otherTxId = v2.tx WHERE (e.sourceaddress = %s or e.targetaddress = %s)"
+            "FROM executed e LEFT JOIN verified v ON e.tntxid = v.tx LEFT JOIN verified v2 ON e.othertxid = v2.tx WHERE (e.sourceaddress = %s or e.targetaddress = %s)"
             values = (address, address)
             cursor.execute(sql, values)
 
