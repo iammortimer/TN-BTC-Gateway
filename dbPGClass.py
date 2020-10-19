@@ -220,9 +220,9 @@ class dbPGCalls(object):
         else:
             return False
 
-    def getTargetAddress(self, sourceaddress):
+    def getTargetAddress(self, sourceAddress):
         sql = 'SELECT targetaddress FROM tunnel WHERE "status" <> %s AND sourceaddress = %s'
-        values = ("error", sourceaddress)
+        values = ("error", sourceAddress)
 
         dbCon = self.openConn()
         cursor = dbCon.cursor()
@@ -236,8 +236,8 @@ class dbPGCalls(object):
         else:
             return {}
 
-    def getSourceAddress(self, targetaddress):
-        if targetaddress == '':
+    def getSourceAddress(self, targetAddress):
+        if targetAddress == '':
             sql = 'SELECT sourceaddress FROM tunnel WHERE "status" = %s'
             values = ("created",)
 
@@ -249,7 +249,7 @@ class dbPGCalls(object):
             self.closeConn(dbCon)
         else:
             sql = 'SELECT sourceaddress FROM tunnel WHERE "status" <> %s AND targetaddress = %s'
-            values = ("error", targetaddress)
+            values = ("error", targetAddress)
 
             dbCon = self.openConn()
             cursor = dbCon.cursor()
@@ -263,13 +263,13 @@ class dbPGCalls(object):
         else:
             return {}
 
-    def getTunnelStatus(self, targetaddress = '', sourceaddress = ''):
-        if targetaddress != '':
+    def getTunnelStatus(self, targetAddress = '', sourceAddress = ''):
+        if targetAddress != '':
             sql = 'SELECT status FROM tunnel WHERE targetaddress = %s ORDER BY id DESC LIMIT 1'
-            values = (targetaddress,)
-        elif  sourceaddress != '':
+            values = (targetAddress,)
+        elif  sourceAddress != '':
             sql = 'SELECT status FROM tunnel WHERE sourceaddress = %s ORDER BY id DESC LIMIT 1'
-            values = (sourceaddress,)
+            values = (sourceAddress,)
         else:
             return {}
 
@@ -304,9 +304,9 @@ class dbPGCalls(object):
         else:
             return {}
 
-    def insTunnel(self, status, sourceaddress, targetaddress):
+    def insTunnel(self, status, sourceAddress, targetAddress):
         sql = 'INSERT INTO tunnel ("sourceaddress", "targetaddress", "status", "timestamp") VALUES (%s, %s, %s, CURRENT_TIMESTAMP)'
-        values = (sourceaddress, targetaddress, status)
+        values = (sourceAddress, targetAddress, status)
 
         dbCon = self.openConn()
         cursor = dbCon.cursor()
@@ -314,12 +314,12 @@ class dbPGCalls(object):
         cursor.close()
         self.closeConn(dbCon)
 
-    def updTunnel(self, status, sourceaddress, targetaddress, statusOld = ''):
+    def updTunnel(self, status, sourceAddress, targetAddress, statusOld = ''):
         if statusOld == '':
             statusOld = 'created'
 
         sql = 'UPDATE tunnel SET "status" = %s, "timestamp" = CURRENT_TIMESTAMP WHERE status = %s AND sourceaddress = %s and targetaddress = %s'
-        values = (status, statusOld, sourceaddress, targetaddress)
+        values = (status, statusOld, sourceAddress, targetAddress)
 
         dbCon = self.openConn()
         cursor = dbCon.cursor()
@@ -327,9 +327,9 @@ class dbPGCalls(object):
         cursor.close()
         self.closeConn(dbCon)
 
-    def delTunnel(self, sourceaddress, targetaddress):
+    def delTunnel(self, sourceAddress, targetAddress):
         sql = 'DELETE FROM tunnel WHERE sourceaddress = %s and targetaddress = %s'
-        values = (sourceaddress, targetaddress)
+        values = (sourceAddress, targetAddress)
 
         dbCon = self.openConn()
         cursor = dbCon.cursor()
@@ -338,9 +338,9 @@ class dbPGCalls(object):
         self.closeConn(dbCon)
 
 #executed table related
-    def insExecuted(self, sourceaddress, targetaddress, otherTxId, tntxid, amount, amountFee):
+    def insExecuted(self, sourceAddress, targetAddress, otherTxId, tntxid, amount, amountFee):
         sql = 'INSERT INTO executed ("sourceaddress", "targetaddress", "otherTxId", "tntxid", "amount", "amountFee") VALUES (%s, %s, %s, %s, %s, %s)'
-        values = (sourceaddress, targetaddress, otherTxId, tntxid, amount, amountFee)
+        values = (sourceAddress, targetAddress, otherTxId, tntxid, amount, amountFee)
 
         dbCon = self.openConn()
         cursor = dbCon.cursor()
@@ -348,9 +348,9 @@ class dbPGCalls(object):
         cursor.close()
         self.closeConn(dbCon)
 
-    def updExecuted(self, id, sourceaddress, targetaddress, otherTxId, tntxid, amount, amountFee):
+    def updExecuted(self, id, sourceAddress, targetAddress, otherTxId, tntxid, amount, amountFee):
         sql = 'UPDATE executed SET "sourceaddress" = %s, "targetaddress" = %s, "otherTxId" = %s, "tntxid" = %s, "amount" = %s, "amountFee" = %s) WHERE id = %s'
-        values = (sourceaddress, targetaddress, otherTxId, tntxid, amount, amountFee, id)
+        values = (sourceAddress, targetAddress, otherTxId, tntxid, amount, amountFee, id)
 
         dbCon = self.openConn()
         cursor = dbCon.cursor()
@@ -389,13 +389,13 @@ class dbPGCalls(object):
         else:
             return {}
 
-    def getExecuted(self, sourceaddress = '', targetaddress = '', otherTxId = '', tntxid = ''):
-        if sourceaddress != '':
+    def getExecuted(self, sourceAddress = '', targetAddress = '', otherTxId = '', tntxid = ''):
+        if sourceAddress != '':
             sql = 'SELECT otherTxId FROM executed WHERE sourceaddress = %s ORDER BY id DESC LIMIT 1'
-            values = (sourceaddress,)
-        elif targetaddress != '':
+            values = (sourceAddress,)
+        elif targetAddress != '':
             sql = 'SELECT tntxid FROM executed WHERE targetaddress = %s ORDER BY id DESC LIMIT 1'
-            values = (targetaddress,)
+            values = (targetAddress,)
         elif otherTxId != '':
             sql = 'SELECT * FROM executed WHERE otherTxId = %s ORDER BY id DESC LIMIT 1'
             values = (otherTxId,)
@@ -418,9 +418,9 @@ class dbPGCalls(object):
             return {}
 
 #error table related
-    def insError(self, sourceaddress, targetaddress, tntxid, otherTxId, amount, error, exception = ''):
+    def insError(self, sourceAddress, targetAddress, tntxid, otherTxId, amount, error, exception = ''):
         sql = 'INSERT INTO errors ("sourceaddress", "targetaddress", "tntxid", "otherTxId", "amount", "error", "exception") VALUES (%s, %s, %s, %s, %s, %s, %s)'
-        values = (sourceaddress, targetaddress, tntxid, otherTxId, amount, error, exception)
+        values = (sourceAddress, targetAddress, tntxid, otherTxId, amount, error, exception)
 
         dbCon = self.openConn()
         cursor = dbCon.cursor()
@@ -443,13 +443,13 @@ class dbPGCalls(object):
         else:
             return {}
 
-    def getError(self, sourceaddress='', targetaddress=''):
-        if sourceaddress != '':
+    def getError(self, sourceAddress='', targetAddress=''):
+        if sourceAddress != '':
             sql = 'SELECT error, tntxid, otherTxId FROM errors WHERE sourceaddress = %s ORDER BY id DESC LIMIT 1'
-            values = (sourceaddress,)
-        elif targetaddress != '':
+            values = (sourceAddress,)
+        elif targetAddress != '':
             sql = 'SELECT error, tntxid, otherTxId FROM errors WHERE targetaddress = %s ORDER BY id DESC LIMIT 1'
-            values = (targetaddress,)
+            values = (targetAddress,)
         else:
             return {}
 
