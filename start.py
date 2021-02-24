@@ -23,7 +23,7 @@ def initialisedb(db):
 
     #get current Other block:
     ethlatestBlock = otherCalls(config).currentBlock()
-    db.insHeights(ethlatestBlock, 'ETH')
+    db.insHeights(ethlatestBlock, 'Other')
 
 def main():
     #check db
