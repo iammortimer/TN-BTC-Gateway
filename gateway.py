@@ -220,6 +220,9 @@ async def createTunnel(targetAddress: str):
     if not tnc.validateAddress(targetAddress):
         return cExecResult(successful=0, sourceAddress='')
 
+    if targetAddress == config['tn']['gatewayAddress']:
+        return {'successful': '0'}
+
     result = dbc.getSourceAddress(targetAddress)
     if len(result) == 0:
         sourceAddress = otc.getNewAddress()

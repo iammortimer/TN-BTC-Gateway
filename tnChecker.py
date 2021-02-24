@@ -58,6 +58,7 @@ class TNChecker(object):
                     else:
                         targetAddress = self.otc.normalizeAddress(targetAddress)
                         amount = transaction['amount'] / pow(10, self.config['tn']['decimals'])
+                        amount = round(amount, 8)
                         
                         if amount < self.config['main']['min'] or amount > self.config['main']['max']:
                             self.faultHandler(transaction, "senderror", e='outside amount ranges')
