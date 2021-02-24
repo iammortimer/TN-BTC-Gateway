@@ -216,9 +216,9 @@ async def checkTunnel(address: str):
     if len(result) == 0:
         targetAddress = ""
     else:
-        targetAddress = result
+        targetAddress = result[0]
 
-    return cAdresses(sourceAddress=targetAddress, targetAddress=address)
+    return cAdresses(sourceAddress=targetAddress, targetAddress=address[0][0])
 
 
 # TODO: rewrite to post
@@ -240,7 +240,7 @@ async def createTunnel(targetAddress: str):
         print("INFO: tunnel created")
         return cExecResult(successful=1, sourceAddress=sourceAddress)
     else:
-        return cExecResult(successful=2, sourceAddress=result)
+        return cExecResult(successful=2, sourceAddress=result[0][0])
 
 
 @app.get("/api/fullinfo", response_model=cFullInfo)
