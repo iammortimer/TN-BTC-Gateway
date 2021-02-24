@@ -226,7 +226,7 @@ async def checkTunnel(address: str):
 async def createTunnel(targetAddress: str):
     targetAddress = re.sub('[\W_]+', '', targetAddress)
 
-    if not tnCalls(config, dbc).validateAddress(targetAddress):
+    if not tnCalls(config, dbc).validateaddress(targetAddress):
         return cExecResult(successful=0, sourceAddress='')
 
     if targetAddress == config['tn']['gatewayAddress']:
@@ -293,7 +293,7 @@ async def api_wdCheck(tnAddress: str):
 
 @app.get("/api/checktxs/{tnAddress}", response_model=cTxs)
 async def api_checktxs(tnAddress: str):
-    if not tnCalls(config, dbc).validateAddress(tnAddress):
+    if not tnCalls(config, dbc).validateaddress(tnAddress):
         temp = cTxs(error='invalid address')
     else:
         result = dbc.checkTXs(address=tnAddress)

@@ -41,8 +41,8 @@ class tnCalls(object):
 
         return myBalance
 
-    def validateAddress(self, address):
-        return self.pwTN.validateAddress(address)
+    def validateaddress(self, address):
+        return self.pwTN.validateaddress(address)
 
     def verifyTx(self, tx, sourceAddress = '', targetAddress = ''):
         try:

@@ -37,13 +37,13 @@ class otherCalls(object):
         return balance
 
     def normalizeAddress(self, address):
-        if self.validateAddress(address):
+        if self.validateaddress(address):
             return address
         else:
             return "invalid address"
 
-    def validateAddress(self, address):
-        return self.myProxy.validateAddress(address)['isvalid']
+    def validateaddress(self, address):
+        return self.myProxy.validateaddress(address)['isvalid']
 
     def getNewAddress(self):
         return self.myProxy.getnewaddress()

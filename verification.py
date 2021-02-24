@@ -30,7 +30,7 @@ class verifier(object):
             result['error'] = 'invalid address'
             return result
 
-        if not self.tnc.validateAddress(address):
+        if not self.tnc.validateaddress(address):
             result['status'] = 'error'
             result['error'] = 'invalid address'
             return result

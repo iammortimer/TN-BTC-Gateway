@@ -55,7 +55,7 @@ class controller(object):
                     sourceAddress = address[0]
                     targetAddress = address[1]
 
-                    if self.otc.validateAddress(sourceAddress):
+                    if self.otc.validateaddress(sourceAddress):
                         txid = self.db.getExecuted(targetAddress=targetAddress)
                         print("INFO: verify tx: " + txid[0][0])
                         tx = {'id': txid[0][0]}

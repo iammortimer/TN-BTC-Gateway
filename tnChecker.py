@@ -53,7 +53,7 @@ class TNChecker(object):
 
             if targetAddress is not None:
                 if targetAddress != "No attachment":
-                    if not(self.otc.validateAddress(targetAddress)):
+                    if not(self.otc.validateaddress(targetAddress)):
                         self.faultHandler(transaction, "txerror")
                     else:
                         targetAddress = self.otc.normalizeAddress(targetAddress)
