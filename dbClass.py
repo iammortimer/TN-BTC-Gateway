@@ -190,7 +190,7 @@ class dbCalls(object):
             cursor.close()
 
         if len(qryResult) > 0:
-            return qryResult[0]
+            return qryResult
         else:
             return {}
 
