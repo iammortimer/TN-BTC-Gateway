@@ -230,33 +230,6 @@ async def createTunnel(targetAddress: str):
     else:
         return cExecResult(successful=2, sourceAddress=result)
 
-#TODO: rewrite to post
-@app.get('/dustkey/{targetAddress}', response_model=cDustkey)
-async def createTunnelDK(targetAddress: str):
-    if not tnc.validateAddress(targetAddress):
-        return {'successful': False}
-
-    sourceAddress = str(round(datetime.datetime.now().timestamp()))
-    sourceAddress = sourceAddress[-6:]
-
-    result = dbc.getTargetAddress(sourceAddress)
-    if len(result) == 0:
-        result = dbc.getSourceAddress(targetAddress)
-
-        if len(result) == 0:
-            dbc.insTunnel("created", sourceAddress, targetAddress)
-            print("INFO: tunnel created - dustkey")
-
-            return { 'successful': True, 'dustkey': sourceAddress}
-        else:
-            return { 'successful': True, 'dustkey': result }
-    else:
-        result = dbc.getSourceAddress(targetAddress)
-        if len(result) == 0:
-            return { 'successful': False }
-        else: 
-            return { 'successful': True, 'dustkey': result }
-
 @app.get("/api/fullinfo", response_model=cFullInfo)
 async def api_fullinfo():
     heights = await getHeights()
