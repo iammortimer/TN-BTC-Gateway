@@ -273,7 +273,7 @@ async def api_fullinfo():
             "other_balance": otherBalance,
             "minAmount": config['main']['min'],
             "maxAmount": config['main']['max'],
-            "type": "tunnel",
+            "type": "deposit",
             "usageinfo": ""}
 
 
