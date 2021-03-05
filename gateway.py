@@ -31,7 +31,7 @@ class cAdresses(BaseModel):
 
 class cExecResult(BaseModel):
     successful: int
-    sourceAddress: str
+    address: str
 
 
 class cFullInfo(BaseModel):
@@ -227,7 +227,7 @@ async def createTunnel(targetAddress: str):
     targetAddress = re.sub('[\W_]+', '', targetAddress)
 
     if not tnCalls(config, dbc).validateaddress(targetAddress):
-        return cExecResult(successful=0, sourceAddress='')
+        return cExecResult(successful=0, address='')
 
     if targetAddress == config['tn']['gatewayAddress']:
         return {'successful': '0'}
@@ -238,9 +238,9 @@ async def createTunnel(targetAddress: str):
 
         dbc.insTunnel("created", sourceAddress, targetAddress)
         print("INFO: tunnel created")
-        return cExecResult(successful=1, sourceAddress=sourceAddress)
+        return cExecResult(successful=1, address=sourceAddress)
     else:
-        return cExecResult(successful=2, sourceAddress=result[0][0])
+        return cExecResult(successful=2, address=result[0][0])
 
 
 @app.get("/api/fullinfo", response_model=cFullInfo)
