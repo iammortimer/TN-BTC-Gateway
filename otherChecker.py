@@ -21,7 +21,6 @@ class OtherChecker(object):
 
         self.tnc = tnCalls(config, self.db)
         self.verifier = verifier(config, self.db)
-        self.otc = otherCalls(config, self.db)
 
         self.lastScannedBlock = self.db.lastScannedBlock("Other")
 
@@ -31,7 +30,7 @@ class OtherChecker(object):
 
         while True:
             try:
-                nextblock = self.otc.currentBlock() - self.config['other']['confirmations']
+                nextblock = otherCalls(self.config, self.db).currentBlock() - self.config['other']['confirmations']
 
                 if nextblock > self.lastScannedBlock:
                     self.lastScannedBlock += 1
@@ -46,9 +45,10 @@ class OtherChecker(object):
     def checkBlock(self, heightToCheck):
         if self.db.doWeHaveTunnels:
             #check content of the block for valid transactions
-            block = self.otc.getBlock(heightToCheck)
+            otc = otherCalls(self.config, self.db)
+            block = otc.getBlock(heightToCheck)
             for transaction in block['tx']:
-                txInfo = self.otc.checkTx(transaction)
+                txInfo = otc.checkTx(transaction)
 
                 if txInfo is not None:
                     txContinue = False
