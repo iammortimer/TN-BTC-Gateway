@@ -20,8 +20,6 @@ class TNChecker(object):
         else:
             self.db = db
 
-        self.otc = otherCalls(config, self.db)
-
         self.tnc = tnCalls(config, self.db)
         self.verifier = verifier(config, self.db)
 
@@ -53,10 +51,10 @@ class TNChecker(object):
 
             if targetAddress is not None:
                 if targetAddress != "No attachment":
-                    if not(self.otc.validateaddress(targetAddress)):
+                    if not(otherCalls(self.config, self.db).validateaddress(targetAddress)):
                         self.faultHandler(transaction, "txerror")
                     else:
-                        targetAddress = self.otc.normalizeAddress(targetAddress)
+                        targetAddress = otherCalls(self.config, self.db).normalizeAddress(targetAddress)
                         amount = transaction['amount'] / pow(10, self.config['tn']['decimals'])
                         amount = round(amount, 8)
                         
@@ -66,7 +64,7 @@ class TNChecker(object):
                             try:
                                 txId = None
                                 self.db.insTunnel('sending', transaction['sender'], targetAddress)
-                                txId = self.otc.sendTx(targetAddress, amount)
+                                txId = otherCalls(self.config, self.db).sendTx(targetAddress, amount)
 
                                 if 'error' in txId:
                                     self.faultHandler(transaction, "senderror", e=txId)
@@ -89,7 +87,7 @@ class TNChecker(object):
                                     print("ERROR: tx failed to send - manual intervention required")
                                     self.db.updTunnel("error", transaction['sender'], targetAddress, statusOld="sending")
                             else:
-                                self.otc.verifyTx(txId, transaction['sender'], targetAddress)
+                                otherCalls(self.config, self.db).verifyTx(txId, transaction['sender'], targetAddress)
                 else:
                     self.faultHandler(transaction, 'noattachment')
         
