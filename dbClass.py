@@ -116,7 +116,7 @@ class dbCalls(object):
         if len(qryResult) > 0:
             return qryResult[0][0]
         else:
-            return {}
+            return 0
 
     def getHeights(self):
         sql = 'SELECT chain, height FROM heights'
